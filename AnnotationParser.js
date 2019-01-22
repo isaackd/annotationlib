@@ -196,10 +196,10 @@ class AnnotationParser {
 				const timeString = url.hash.split("#t=")[1];
 				seconds = this.timeStringToSeconds(timeString);
 			}
-			return {type: "time", actionSeconds: seconds}
+			return {actionType: "time", actionSeconds: seconds}
 		}
 		else {
-			return {type: "url", actionUrl: url.href};
+			return {actionType: "url", actionUrl: url.href};
 		}
 	}
 	getAppearanceFromBase(base) {
