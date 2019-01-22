@@ -199,7 +199,7 @@ class AnnotationParser {
 			return {type: "time", actionSeconds: seconds}
 		}
 		else {
-			return {type: "url", actionUrl: href};
+			return {type: "url", actionUrl: url.href};
 		}
 	}
 	getAppearanceFromBase(base) {
