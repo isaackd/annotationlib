@@ -1,12 +1,4 @@
 class AnnotationParser {
-	/* ATTRIBUTES FOUND IN YOUTUBE'S ANNOTATION FORMAT */
-	static get baseAttributes() {
-		return ["id", "type", "style", "popup", "log_data", "itct"];
-	}
-	/* ATTRIBUTES THAT MUST BE PRESENT IN AR FORMAT */
-	static get requiredAttributes() {
-		return ["x", "y", "width", "height", "timeStart", "timeEnd"];
-	}
 	static get attributeMap() {
 		return {
 			type: "tp",
@@ -15,12 +7,19 @@ class AnnotationParser {
 			y: "y",
 			width: "w",
 			height: "h",
+
 			timeStart: "ts",
 			timeEnd: "te",
 			text: "t",
+
 			actionType: "at",
 			actionUrl: "au",
 			actionSeconds: "as",
+
+			bgOpacity: "bgo",
+			bgColor: "bgc",
+			fgColor: "fgc",
+			textSize: "txsz"
 		};
 	}
 
@@ -47,27 +46,24 @@ class AnnotationParser {
 		return annotation;
 	}
 	serializeAnnotation(annotation) {
-		if (this.checkForRequiredProperties(annotation)) {
-			const map = this.constructor.attributeMap;
-			let serialized = "";
-			for (const key in annotation) {
-				const mappedKey = map[key];
-				if ((key === "text" || key === "actionType" || key === "actionUrl") 
-					&& mappedKey && annotation.hasOwnProperty(key)) {
+		const map = this.constructor.attributeMap;
+		let serialized = "";
+		for (const key in annotation) {
+			const mappedKey = map[key];
+			if ((key === "text" || key === "actionType" || key === "actionUrl") 
+				&& mappedKey && annotation.hasOwnProperty(key)) {
 
-					let text = encodeURIComponent(annotation[key]);
-					serialized += `${mappedKey}=${text},`;
-				}
-				else if (mappedKey && annotation.hasOwnProperty(key) &&
-					(key !== "text" && key !== "actionType" && key !== "actionUrl")) {
-
-					serialized += `${mappedKey}=${annotation[key]},`;
-				}
+				let text = encodeURIComponent(annotation[key]);
+				serialized += `${mappedKey}=${text},`;
 			}
-			// remove trailing comma
-			return serialized.substring(0, serialized.length - 1);
+			else if (mappedKey && annotation.hasOwnProperty(key) &&
+				(key !== "text" && key !== "actionType" && key !== "actionUrl")) {
+
+				serialized += `${mappedKey}=${annotation[key]},`;
+			}
 		}
-		throw new Error("Invalid Annotation Format");
+		// remove trailing comma
+		return serialized.substring(0, serialized.length - 1);
 	}
 
 	deserializeAnnotationList(serializedAnnotationString) {
@@ -87,16 +83,6 @@ class AnnotationParser {
 		return serialized;
 	}
 
-	checkForRequiredProperties(annotation) {
-		const requiredAttributes = this.constructor.requiredAttributes;
-		for (const attr of requiredAttributes) {
-			if (!annotation.hasOwnProperty(attr)) {
-				throw new Error(`Annotation is missing required property \'${attr}\'`);
-			}
-		}
-		return true;
-	}
-
 	/* PARSING YOUTUBE'S ANNOTATION FORMAT */
 	xmlToDom(xml) {
 		const parser = new DOMParser();
@@ -107,68 +93,53 @@ class AnnotationParser {
 		const dom = this.xmlToDom(xml);
 		return dom.getElementsByTagName("annotation");
 	}
-	parseYoutubeFormat(annotationElements) {
-
-		if (typeof annotationElements[Symbol.iterator] === 'function') {
-			const annotations = [];
-			for (const el of annotationElements) {
-				const parsedAnnotation = this.parseYoutubeFormat(el);
-				if (parsedAnnotation) annotations.push(parsedAnnotation);
-			}
-			return annotations;
+	parseYoutubeAnnotationList(annotationElements) {
+		const annotations = [];
+		for (const el of annotationElements) {
+			const parsedAnnotation = this.parseYoutubeAnnotation(el);
+			if (parsedAnnotation) annotations.push(parsedAnnotation);
 		}
-		else {
-			const base = annotationElements;
+		return annotations;
+	}
+	parseYoutubeAnnotation(annotationElement) {
+		const base = annotationElement;
+		const attributes = this.getAttributesFromBase(base);
+		if (!attributes.type || attributes.type === "pause") return null;
 
-			const attributes = this.getAttributesFromBase(base);
+		const text = this.getTextFromBase(base);
+		const action = this.getActionFromBase(base);
 
-			let type;
-			if (attributes.type === "pause") {
-				return null;
-			}
-			else {
-				type = attributes.type;
-			}
+		const backgroundShape = this.getBackgroundShapeFromBase(base);
+		if (!backgroundShape) return null;
+		const timeStart = backgroundShape.timeRange.start;
+		const timeEnd = backgroundShape.timeRange.end;
 
-			const text = this.getTextFromBase(base);
-			const backgroundShape = this.getBackgroundShapeFromBase(base);
-			if (!backgroundShape) return null;
-
-			const action = this.getActionFromBase(base);
-
-			const timeStart = backgroundShape.timeRange.start;
-			const timeEnd = backgroundShape.timeRange.end;
-
-			if (isNaN(timeStart) || isNaN(timeEnd)) {
-				return null;
-			}
-
-			const obj = {
-				x: backgroundShape.x, 
-				y: backgroundShape.y, 
-				width: backgroundShape.width, 
-				height: backgroundShape.height, 
-				timeStart,
-				timeEnd,
-				attributes
-			};
-
-			if (type) obj.type = type;
-			if (attributes.style) obj.style = attributes.style;
-
-			if (text) obj.text = text;
-			if (action) {
-			 	obj.actionType = action.type;
-			 	if (action.type === "time") {
-			 		obj.actionSeconds = action.seconds;
-			 	}
-			 	else if (action.type === "url") {
-			 		obj.actionUrl = action.href;
-			 	}
-			} 
-
-			return obj;
+		if (isNaN(timeStart) || isNaN(timeEnd) || timeStart === null || timeEnd === null) {
+			return null;
 		}
+
+		const appearance = this.getAppearanceFromBase(base);
+
+		// properties the renderer needs
+		let annotation = {
+			// possible values: text, highlight, pause, branding
+			type: attributes.type,
+			// x, y, width, and height as percent of video size
+			x: backgroundShape.x, 
+			y: backgroundShape.y, 
+			width: backgroundShape.width, 
+			height: backgroundShape.height,
+			// what time the annotation is shown in seconds
+			timeStart,
+			timeEnd
+		};
+		// properties the renderer can work without
+		if (attributes.style) annotation.style = attributes.style;
+		if (text) annotation.text = text;
+		if (action) annotation = Object.assign(action, annotation);
+		if (appearance) annotation = Object.assign(appearance, annotation);
+
+		return annotation;
 	}
 	getBackgroundShapeFromBase(base) {
 		const movingRegion = base.getElementsByTagName("movingRegion")[0];
@@ -189,9 +160,8 @@ class AnnotationParser {
 	}
 	getAttributesFromBase(base) {
 		const attributes = {};
-		for (const attribute of this.constructor.baseAttributes) {
-			attributes[attribute] = base.getAttribute(attribute);
-		}
+		attributes.type = base.getAttribute("type");
+		attributes.style = base.getAttribute("style");
 		return attributes;
 	}
 	getTextFromBase(base) {
@@ -213,26 +183,49 @@ class AnnotationParser {
 			const srcVid = url.searchParams.get("src_vid");
 			const toVid = url.searchParams.get("v");
 
-			// check if it's a link to a new video
-			// or just a timestamp
-			if (srcVid && toVid && srcVid === toVid) {
-				let seconds = 0;
-				const hash = url.hash;
-				if (hash && hash.startsWith("#t=")) {
-					const timeString = url.hash.split("#t=")[1];
-					seconds = this.timeStringToSeconds(timeString);
-				}
-				return {type: "time", seconds}
-			}
-			else {
-				return {type: "url", href};
-			}
-
-		}
-		else {
-			return null;
+			return this.linkOrTimestamp(url, srcVid, toVid);
 		}
 	}
+	linkOrTimestamp(url, srcVid, toVid) {
+		// check if it's a link to a new video
+		// or just a timestamp
+		if (srcVid && toVid && srcVid === toVid) {
+			let seconds = 0;
+			const hash = url.hash;
+			if (hash && hash.startsWith("#t=")) {
+				const timeString = url.hash.split("#t=")[1];
+				seconds = this.timeStringToSeconds(timeString);
+			}
+			return {type: "time", actionSeconds: seconds}
+		}
+		else {
+			return {type: "url", actionUrl: href};
+		}
+	}
+	getAppearanceFromBase(base) {
+		const appearanceElement = base.getElementsByTagName("appearance")[0];
+		if (appearanceElement) {
+			const bgOpacity = appearanceElement.getAttribute("bgAlpha");
+			const bgColor = appearanceElement.getAttribute("bgColor");
+			const fgColor = appearanceElement.getAttribute("fgColor");
+			const textSize = appearanceElement.getAttribute("textSize");
+			// not yet sure what to do with effects 
+			// const effects = appearanceElement.getAttribute("effects");
+
+			const styles = {};
+			// 0.00 to 1.00
+			if (bgOpacity) styles.bgOpacity = parseFloat(bgOpacity, 10);
+			// 0 to 256 ** 3
+			if (bgColor) styles.bgColor = parseInt(bgColor, 10);
+			if (fgColor) styles.fgColor = parseInt(fgColor, 10);
+			// 0.00 to 100.00?
+			if (textSize) styles.textSize = parseFloat(textSize, 10);
+
+			return styles;
+		}
+	}
+
+	/* helper functions */
 	extractRegionTime(regions) {
 		let timeStart = regions[0].getAttribute("t");
 		timeStart = this.hmsToSeconds(timeStart);
@@ -254,7 +247,6 @@ class AnnotationParser {
 	    }
 	    return s;
 	}
-	// from InstantView
 	timeStringToSeconds(time) {
 		let seconds = 0;
 
@@ -268,7 +260,6 @@ class AnnotationParser {
 
 		return seconds;
 	}
-	/* OTHER */
 	getKeyByValue(obj, value) {
 		for (const key in obj) {
 			if (obj.hasOwnProperty(key)) {
