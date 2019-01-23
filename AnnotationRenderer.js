@@ -1,4 +1,14 @@
 class AnnotationRenderer {
+
+	static get defaultAppearanceAttributes() {
+		return {
+			bgColor: 0,
+			bgOpacity: 0.70,
+			fgColor: 0xFFFFFF,
+			textSize: 2
+		};
+	}
+
 	constructor(annotations, container, playerOptions, updateInterval = 1000) {
 		if (!annotations) throw new Error("Annotation objects must be provided");
 		if (!container) throw new Error("An element to contain the annotations must be provided");
@@ -62,25 +72,33 @@ class AnnotationRenderer {
 
 			// appearance
 			const containerHeight = this.container.getBoundingClientRect().height;
-
+			let annotationAppearance = this.constructor.defaultAppearanceAttributes;
 			if (!isNaN(annotation.textSize)) {
+				// text size calculations
+				// https://github.com/Seirade/YouTube-Annotation-Player/blob/ca763944c4bc947d44ba975c1f07fc0438b51cd3/annotations.js#L88
 				const textSize = (annotation.textSize / 100) * containerHeight;
-				el.style.textSize = textSize;
+				annotationAppearance.textSize = textSize;
 			}
 
 			if (!isNaN(annotation.fgColor)) {
-				el.style.color = `#${this.decimalToHex(annotation.fgColor)}`;
+				annotationAppearance.fgColor = annotation.fgColor;
 			}
 
 			if (!isNaN(annotation.bgColor)) {
-				el.style.backgroundColor = this.getFinalAnnotationColor(annotation);
-				el.addEventListener("mouseenter", () => {
-					el.style.backgroundColor = this.getFinalAnnotationColor(annotation, true);
-				});
-				el.addEventListener("mouseleave", () => {
-					el.style.backgroundColor = this.getFinalAnnotationColor(annotation, false);
-				});
+				annotationAppearance.bgColor = annotation.bgColor;
 			}
+
+			el.style.textSize = annotationAppearance.textSize;
+			el.style.color = `#${this.decimalToHex(annotationAppearance.fgColor)}`;
+
+			el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance);
+			console.log(this.getFinalAnnotationColor(annotationAppearance), annotationAppearance);
+			el.addEventListener("mouseenter", () => {
+				el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, true);
+			});
+			el.addEventListener("mouseleave", () => {
+				el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, false);
+			});
 
 			el.setAttribute("data-ar-type", annotation.type);
 
@@ -119,7 +137,7 @@ class AnnotationRenderer {
 		return svg;
 	}
 	getFinalAnnotationColor(annotation, hover = false) {
-		const alphaHex = hover ? Math.floor(0xE6).toString(16) : Math.floor((annotation.bgOpacity * 255)).toString(16);
+		const alphaHex = hover ? (0xE6).toString(16) : Math.floor((annotation.bgOpacity * 255)).toString(16);
 		if (!isNaN(annotation.bgColor)) {
 			const bgColorHex = this.decimalToHex(annotation.bgColor);
 
