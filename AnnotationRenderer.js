@@ -92,7 +92,6 @@ class AnnotationRenderer {
 			el.style.color = `#${this.decimalToHex(annotationAppearance.fgColor)}`;
 
 			el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance);
-			console.log(this.getFinalAnnotationColor(annotationAppearance), annotationAppearance);
 			el.addEventListener("mouseenter", () => {
 				el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, true);
 			});
