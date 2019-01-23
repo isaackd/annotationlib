@@ -1,12 +1,17 @@
 class AnnotationRenderer {
-	constructor(annotations, container, postMessageOrigin, updateInterval = 1000) {
+	constructor(annotations, container, playerOptions, updateInterval = 1000) {
 		if (!annotations) throw new Error("Annotation objects must be provided");
 		if (!container) throw new Error("An element to contain the annotations must be provided");
-		if (!postMessageOrigin) throw new Error("A postMessageOrigin must be provided");
+
+		if (playerOptions && playerOptions.getVideoTime && playerOptions.seekTo) {
+			this.playerOptions = playerOptions;
+		}
+		else {
+			console.info("AnnotationRenderer is running without a player. The update method will need to be called manually.");
+		}
 
 		this.annotations = annotations;
 		this.container = container;
-		this.postMessageOrigin = postMessageOrigin;
 
 		this.annotationsContainer = document.createElement("div");
 		this.annotationsContainer.classList.add("__cxt-ar-annotations-container__");
@@ -15,14 +20,19 @@ class AnnotationRenderer {
 			this.annotationClickHandler(e);
 		});
 		this.container.prepend(this.annotationsContainer);
+
 		this.createAnnotationElements();
 
-		window.addEventListener("__annotations_restored_renderer_update", e => {
-			this.update(e.detail.videoTime);
+		// in case the dom already loaded
+		this.updateTextSize();
+		this.updateCloseSize();
+		window.addEventListener("DOMContentLoaded", e => {
+			this.updateTextSize();
+			this.updateCloseSize();
 		});
 
 		this.updateInterval = updateInterval;
-
+		this.updateIntervalId = null;
 	}
 	changeAnnotationData(annotations) {
 		this.stop();
@@ -42,11 +52,43 @@ class AnnotationRenderer {
 			el.style.width = `${annotation.width}%`;
 			el.style.height = `${annotation.height}%`;
 
+			// close button
+			const closeButton = this.createCloseElement();
+			closeButton.addEventListener("click", e => {
+				el.setAttribute("hidden", "");
+				el.setAttribute("data-ar-closed", "");
+			});
+			el.append(closeButton);
+
+			// appearance
+			const containerHeight = this.container.getBoundingClientRect().height;
+
+			if (!isNaN(annotation.textSize)) {
+				const textSize = (annotation.textSize / 100) * containerHeight;
+				el.style.textSize = textSize;
+			}
+
+			if (!isNaN(annotation.fgColor)) {
+				el.style.color = `#${this.decimalToHex(annotation.fgColor)}`;
+			}
+
+			if (!isNaN(annotation.bgColor)) {
+				el.style.backgroundColor = this.getFinalAnnotationColor(annotation);
+				el.addEventListener("mouseenter", () => {
+					el.style.backgroundColor = this.getFinalAnnotationColor(annotation, true);
+				});
+				el.addEventListener("mouseleave", () => {
+					el.style.backgroundColor = this.getFinalAnnotationColor(annotation, false);
+				});
+			}
+
 			el.setAttribute("data-ar-type", annotation.type);
 
 			if (annotation.text) {
-				el.textContent = annotation.text;
-				el.setAttribute("data-has-text", "");
+				const textNode = document.createElement("span");
+				textNode.textContent = annotation.text;
+				el.append(textNode);
+				el.setAttribute("data-ar-has-text", "");
 			}
 
 			el.setAttribute("hidden", "");
@@ -54,6 +96,35 @@ class AnnotationRenderer {
 			annotation.__element = el;
 			el.__anotation = annotation;
 			this.annotationsContainer.append(el);
+		}
+	}
+	createCloseElement() {
+		const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+		svg.setAttribute("viewBox", "0 0 100 100")
+		svg.classList.add("__cxt-ar-annotation-close__");
+
+		const path = document.createElementNS(svg.namespaceURI, "path");
+		path.setAttribute("d", "M25 25 L 75 75 M 75 25 L 25 75");
+		path.setAttribute("stroke", "#bbb");
+		path.setAttribute("stroke-width", 10)
+		path.setAttribute("x", 5);
+		path.setAttribute("y", 5);
+
+		const circle = document.createElementNS(svg.namespaceURI, "circle");
+		circle.setAttribute("cx", 50);
+		circle.setAttribute("cy", 50);
+		circle.setAttribute("r", 50);
+
+		svg.append(circle, path);
+		return svg;
+	}
+	getFinalAnnotationColor(annotation, hover = false) {
+		const alphaHex = hover ? Math.floor(0xE6).toString(16) : Math.floor((annotation.bgOpacity * 255)).toString(16);
+		if (!isNaN(annotation.bgColor)) {
+			const bgColorHex = this.decimalToHex(annotation.bgColor);
+
+			const backgroundColor = `#${bgColorHex}${alphaHex}`;
+			return backgroundColor;
 		}
 	}
 	removeAnnotationElements() {
@@ -64,6 +135,7 @@ class AnnotationRenderer {
 	update(videoTime) {
 		for (const annotation of this.annotations) {
 			const el = annotation.__element;
+			if (el.hasAttribute("data-ar-closed")) continue;
 			const start = annotation.timeStart;
 			const end = annotation.timeEnd;
 
@@ -75,40 +147,91 @@ class AnnotationRenderer {
 			}
 		}
 	}
+	start() {
+		if (!this.playerOptions) throw new Error("playerOptions must be provided to use the start method");
+
+		const videoTime = this.playerOptions.getVideoTime();
+		if (!this.updateIntervalId) {
+			this.update(videoTime);
+			this.updateIntervalId = setInterval(() => {
+				const videoTime = this.playerOptions.getVideoTime();
+				this.update(videoTime);
+				window.dispatchEvent(new CustomEvent("__ar_renderer_start"));
+			}, this.updateInterval);
+		}
+	}
+	stop() {
+		if (!this.playerOptions) throw new Error("playerOptions must be provided to use the stop method");
+
+		const videoTime = this.playerOptions.getVideoTime();
+		if (this.updateIntervalId) {
+			this.update(videoTime);
+			clearInterval(this.updateIntervalId);
+			this.updateIntervalId = null;
+			window.dispatchEvent(new CustomEvent("__ar_renderer_stop"));
+		}
+	}
+
+	updateAnnotationTextSize(annotation, containerHeight) {
+		if (annotation.textSize) {
+			const textSize = (annotation.textSize / 100) * containerHeight - 3.5;
+			annotation.__element.style.fontSize = `${textSize}pt`;
+		}
+	}
+	updateTextSize() {
+		const containerHeight = this.container.getBoundingClientRect().height;
+		// should be run when the video resizes
+		for (const annotation of this.annotations) {
+			this.updateAnnotationTextSize(annotation, containerHeight);
+		}
+	}
+
+	updateCloseSize() {
+		const containerHeight = this.container.getBoundingClientRect().height;
+		const multiplier = 0.0423;
+		this.annotationsContainer.style.setProperty("--annotation-close-size", `${containerHeight * multiplier}px`);
+	}
+
 	hideAll() {
 		for (const annotation of this.annotations) {
 			annotation.__element.setAttribute("hidden", "");
 		}
 	}
-	start() {
-		window.postMessage({type: "__annotations_restored_renderer_start", updateInterval: this.updateInterval}, this.postMessageOrigin);
-	}
-	stop() {
-		window.postMessage({type: "__annotations_restored_renderer_stop"}, this.postMessageOrigin);
-	}
-
 	annotationClickHandler(e) {
-		const annotationElement = e.target;
-		const annotationData = annotationElement.__anotation;
+		let annotationElement = e.target;
+		// if we click on annotation text instead of the actual annotation element
+		if (!annotationElement.matches(".__cxt-ar-annotation__") && !annotationElement.closest(".__cxt-ar-annotation-close__")) {
+			annotationElement = annotationElement.closest(".__cxt-ar-annotation__");
+			if (!annotationElement) return null;
+		} 
+		let annotationData = annotationElement.__anotation;
 
 		if (!annotationElement || !annotationData) return;
 
 		if (annotationData.actionType === "time") {
 			const seconds = annotationData.actionSeconds;
-			this.setVideoTime(seconds);
+			if (this.playerOptions) {
+				this.playerOptions.seekTo(seconds);
+				const videoTime = this.playerOptions.getVideoTime();
+				this.update(videoTime);
+			}
+			window.dispatchEvent(new CustomEvent("__ar_seek_to", {data: {seconds}}));
 		}
 		else if (annotationData.actionType === "url") {
-			window.postMessage({type: "__annotations_restored_renderer_urlclick", url: annotationData.actionUrl});
+			window.location.href = annotationData.actionUrl;
+			// window.dispatchEvent(new CustomEvent("__ar_annotation_click", {data: {url: annotationData.actionUrl}}));
 		}
-	}
-
-	setVideoTime(seconds) {
-		window.postMessage({type: "__annotations_restored_renderer_seek_to", seconds}, this.postMessageOrigin);
 	}
 
 	setUpdateInterval(ms) {
 		this.updateInterval = ms;
 		this.stop();
 		this.start();
+	}
+	// https://stackoverflow.com/a/3689638/10817894
+	decimalToHex(dec) {
+		let hex = dec.toString(16);
+		hex = "000000".substr(0, 6 - hex.length) + hex; 
+		return hex;
 	}
 }
