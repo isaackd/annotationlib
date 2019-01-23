@@ -215,11 +215,11 @@ class AnnotationRenderer {
 				const videoTime = this.playerOptions.getVideoTime();
 				this.update(videoTime);
 			}
-			window.dispatchEvent(new CustomEvent("__ar_seek_to", {data: {seconds}}));
+			window.dispatchEvent(new CustomEvent("__ar_seek_to", {detail: {seconds}}));
 		}
 		else if (annotationData.actionType === "url") {
 			window.location.href = annotationData.actionUrl;
-			// window.dispatchEvent(new CustomEvent("__ar_annotation_click", {data: {url: annotationData.actionUrl}}));
+			// window.dispatchEvent(new CustomEvent("__ar_annotation_click", {detail: {url: annotationData.actionUrl}}));
 		}
 	}
 
