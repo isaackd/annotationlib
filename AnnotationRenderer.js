@@ -76,8 +76,7 @@ class AnnotationRenderer {
 			if (!isNaN(annotation.textSize)) {
 				// text size calculations
 				// https://github.com/Seirade/YouTube-Annotation-Player/blob/ca763944c4bc947d44ba975c1f07fc0438b51cd3/annotations.js#L88
-				const textSize = (annotation.textSize / 100) * containerHeight;
-				annotationAppearance.textSize = textSize;
+				annotationAppearance.textSize = annotation.textSize;
 			}
 
 			if (!isNaN(annotation.fgColor)) {
@@ -88,7 +87,7 @@ class AnnotationRenderer {
 				annotationAppearance.bgColor = annotation.bgColor;
 			}
 
-			el.style.textSize = annotationAppearance.textSize;
+			el.style.fontSize = ((annotationAppearance.textSize / 100) * containerHeight) + "pt";
 			el.style.color = `#${this.decimalToHex(annotationAppearance.fgColor)}`;
 
 			el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance);
@@ -98,6 +97,11 @@ class AnnotationRenderer {
 			el.addEventListener("mouseleave", () => {
 				el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, false);
 			});
+
+			annotation.bgColor = annotationAppearance.bgColor;
+			annotation.bgOpacity = annotationAppearance.bgOpacity;
+			annotation.fgColor = annotationAppearance.fgColor;
+			annotation.textSize = annotationAppearance.textSize;
 
 			el.setAttribute("data-ar-type", annotation.type);
 
