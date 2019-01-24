@@ -10,6 +10,7 @@
 	left: 0px;
 
 	pointer-events: none;
+	overflow: hidden;
 }
 
 .__cxt-ar-annotation__ {
