@@ -15,10 +15,8 @@
 
 .__cxt-ar-annotation__ {
 	position: absolute;
-	display: flex;
 
-	justify-content: center;
-	align-items: center;
+	padding: 4px 5px 0 5px;
 
 	box-sizing: border-box;
 
