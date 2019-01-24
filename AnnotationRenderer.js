@@ -240,8 +240,8 @@ class AnnotationRenderer {
 			window.dispatchEvent(new CustomEvent("__ar_seek_to", {detail: {seconds}}));
 		}
 		else if (annotationData.actionType === "url") {
-			window.location.href = annotationData.actionUrl;
-			// window.dispatchEvent(new CustomEvent("__ar_annotation_click", {detail: {url: annotationData.actionUrl}}));
+			// window.location.href = annotationData.actionUrl;
+			window.dispatchEvent(new CustomEvent("__ar_annotation_click", {detail: {url: annotationData.actionUrl}}));
 		}
 	}
 
