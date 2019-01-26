@@ -204,8 +204,8 @@ class AnnotationRenderer {
 		this.annotationsContainer.style.setProperty("--annotation-close-size", `${containerHeight * multiplier}px`);
 	}
 	updateAnnotationDimensions(annotations, videoWidth, videoHeight) {
-		const playerWidth = this.annotationsContainer.getBoundingClientRect().width;
-		const playerHeight = this.annotationsContainer.getBoundingClientRect().height;
+		const playerWidth = this.container.getBoundingClientRect().width;
+		const playerHeight = this.container.getBoundingClientRect().height;
 
 		const widthDivider = playerWidth / videoWidth;
 		const heightDivider = playerHeight / videoHeight;
@@ -263,8 +263,8 @@ class AnnotationRenderer {
 			this.updateAnnotationDimensions(this.annotations, videoWidth, videoHeight);
 		}
 		else {
-			const playerWidth = this.annotationsContainer.getBoundingClientRect().width;
-			const playerHeight = this.annotationsContainer.getBoundingClientRect().height;
+			const playerWidth = this.container.getBoundingClientRect().width;
+			const playerHeight = this.container.getBoundingClientRect().height;
 			this.updateAnnotationDimensions(this.annotations, playerWidth, playerHeight);
 		}
 	}
