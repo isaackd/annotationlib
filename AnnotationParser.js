@@ -8,6 +8,9 @@ class AnnotationParser {
 			width: "w",
 			height: "h",
 
+			sx: "sx",
+			sy: "sy",
+
 			timeStart: "ts",
 			timeEnd: "te",
 			text: "t",
@@ -139,6 +142,9 @@ class AnnotationParser {
 		if (action) annotation = Object.assign(action, annotation);
 		if (appearance) annotation = Object.assign(appearance, annotation);
 
+		if (backgroundShape.hasOwnProperty("sx")) annotation.sx = backgroundShape.sx;
+		if (backgroundShape.hasOwnProperty("sy")) annotation.sy = backgroundShape.sy;
+
 		return annotation;
 	}
 	getBackgroundShapeFromBase(base) {
@@ -149,14 +155,22 @@ class AnnotationParser {
 		const regions = movingRegion.getElementsByTagName(`${regionType}Region`);
 		const timeRange = this.extractRegionTime(regions);
 
-		return {
+		const shape = {
 			type: regionType,
 			x: parseFloat(regions[0].getAttribute("x"), 10),
 			y: parseFloat(regions[0].getAttribute("y"), 10),
 			width: parseFloat(regions[0].getAttribute("w"), 10),
 			height: parseFloat(regions[0].getAttribute("h"), 10),
 			timeRange
-		};
+		}
+
+		const sx = regions[0].getAttribute("sx");
+		const sy = regions[0].getAttribute("sy");
+
+		if (sx) shape.sx = parseFloat(sx, 10);
+		if (sy) shape.sy = parseFloat(sy, 10);
+		
+		return shape;
 	}
 	getAttributesFromBase(base) {
 		const attributes = {};
