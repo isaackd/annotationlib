@@ -55,7 +55,7 @@ class AnnotationRenderer {
 			el.classList.add("__cxt-ar-annotation__");
 
 			annotation.__element = el;
-			el.__anotation = annotation;
+			el.__annotation = annotation;
 
 			// close button
 			const closeButton = this.createCloseElement();
