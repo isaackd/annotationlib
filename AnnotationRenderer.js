@@ -281,7 +281,7 @@ class AnnotationRenderer {
 			annotationElement = annotationElement.closest(".__cxt-ar-annotation__");
 			if (!annotationElement) return null;
 		} 
-		let annotationData = annotationElement.__anotation;
+		let annotationData = annotationElement.__annotation;
 
 		if (!annotationElement || !annotationData) return;
 
@@ -295,8 +295,13 @@ class AnnotationRenderer {
 			window.dispatchEvent(new CustomEvent("__ar_seek_to", {detail: {seconds}}));
 		}
 		else if (annotationData.actionType === "url") {
-			// window.location.href = annotationData.actionUrl;
-			window.dispatchEvent(new CustomEvent("__ar_annotation_click", {detail: {url: annotationData.actionUrl}}));
+			const data = {url: annotationData.actionUrl};
+
+			const timeHash = this.extractTimeHash(new URL(data.url));
+			if (timeHash && timeHash.hasOwnProperty("seconds")) {
+				data.seconds = timeHash.seconds;
+			}
+			window.dispatchEvent(new CustomEvent("__ar_annotation_click", {detail: data}));
 		}
 	}
 
@@ -310,5 +315,31 @@ class AnnotationRenderer {
 		let hex = dec.toString(16);
 		hex = "000000".substr(0, 6 - hex.length) + hex; 
 		return hex;
+	}
+	extractTimeHash(url) {
+		if (!url) throw new Error("A URL must be provided");
+		const hash = url.hash;
+
+		if (hash && hash.startsWith("#t=")) {
+			const timeString = url.hash.split("#t=")[1];
+			const seconds = this.timeStringToSeconds(timeString);
+			return {seconds};
+		}
+		else {
+			return false;
+		}
+	}
+	timeStringToSeconds(time) {
+		let seconds = 0;
+
+		const h = time.split("h");
+	  	const m = (h[1] || time).split("m");
+	  	const s = (m[1] || time).split("s");
+		  
+	  	if (h[0] && h.length === 2) seconds += parseInt(h[0], 10) * 60 * 60;
+	  	if (m[0] && m.length === 2) seconds += parseInt(m[0], 10) * 60;
+	  	if (s[0] && s.length === 2) seconds += parseInt(s[0], 10);
+
+		return seconds;
 	}
 }
