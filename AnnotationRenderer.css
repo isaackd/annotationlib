@@ -16,13 +16,10 @@
 .__cxt-ar-annotation__ {
 	position: absolute;
 
-	padding: 4px 5px 0 5px;
-
 	box-sizing: border-box;
 
 	font-family: Arial, sans-serif;
 	color: white;
-	cursor: pointer;
 
 	z-index: 20;
 }
@@ -32,9 +29,17 @@
 }
 
 .__cxt-ar-annotation__ span {
+	position: absolute;
+	left: 0;
+	top: 0;
 	overflow: hidden;
 	word-wrap: break-word;
 	white-space: pre-wrap;
+
+	pointer-events: none;
+	box-sizing: border-box;
+
+	padding: 2%;
 
 	user-select: none; 
 	-webkit-user-select: none;  /* Chrome all / Safari all */
@@ -48,8 +53,12 @@
 	width: var(--annotation-close-size);
 	height: var(--annotation-close-size);
 
+	cursor: pointer;
+
 	right: calc(var(--annotation-close-size) / -1.8);
 	top: calc(var(--annotation-close-size) / -1.8);
+	/* place the close button above the svg */
+	z-index: 1;
 }
 .__cxt-ar-annotation__:hover:not([hidden]):not([data-ar-closed]) .__cxt-ar-annotation-close__ {
 	display: block;

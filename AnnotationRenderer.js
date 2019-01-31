@@ -62,6 +62,10 @@ class AnnotationRenderer {
 			closeButton.addEventListener("click", e => {
 				el.setAttribute("hidden", "");
 				el.setAttribute("data-ar-closed", "");
+				if (el.__annotation.__speechBubble) {
+					const speechBubble = el.__annotation.__speechBubble;
+					speechBubble.style.display = "none";
+				}
 			});
 			el.append(closeButton);
 
@@ -86,19 +90,6 @@ class AnnotationRenderer {
 			annotation.fgColor = annotationAppearance.fgColor;
 			annotation.textSize = annotationAppearance.textSize;
 
-			// this.updateAnnotationTextSize(annotation);
-			el.style.color = `#${this.decimalToHex(annotationAppearance.fgColor)}`;
-
-			el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance);
-			el.addEventListener("mouseenter", () => {
-				el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, true);
-			});
-			el.addEventListener("mouseleave", () => {
-				el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, false);
-			});
-
-			el.setAttribute("data-ar-type", annotation.type);
-
 			if (annotation.text) {
 				const textNode = document.createElement("span");
 				textNode.textContent = annotation.text;
@@ -106,8 +97,63 @@ class AnnotationRenderer {
 				el.setAttribute("data-ar-has-text", "");
 			}
 
-			el.setAttribute("hidden", "");
+			if (annotation.style === "speech") {
+				const containerDimensions = this.container.getBoundingClientRect();
+				const speechX = this.percentToPixels(containerDimensions.width, annotation.x);
+				const speechY = this.percentToPixels(containerDimensions.height, annotation.y);
 
+				const speechWidth = this.percentToPixels(containerDimensions.width, annotation.width);
+				const speechHeight = this.percentToPixels(containerDimensions.height, annotation.height);
+
+				const speechPointX = this.percentToPixels(containerDimensions.width, annotation.sx);
+				const speechPointY = this.percentToPixels(containerDimensions.height, annotation.sy);
+
+				const bubbleColor = this.getFinalAnnotationColor(annotationAppearance, false);
+				const bubble = this.createSvgSpeechBubble(speechX, speechY, speechWidth, speechHeight, speechPointX, speechPointY, bubbleColor, annotation.__element);
+				bubble.style.display = "none";
+				bubble.__annotationEl = el;
+				annotation.__speechBubble = bubble;
+
+				const path = bubble.getElementsByTagName("path")[0];
+				path.addEventListener("mouseover", () => {
+					closeButton.style.display = "block";
+					path.style.cursor = "pointer";
+					closeButton.style.cursor = "pointer";
+					path.setAttribute("fill", this.getFinalAnnotationColor(annotationAppearance, true));
+				});
+				path.addEventListener("mouseout", e => {
+					if (!e.relatedTarget.classList.contains("__cxt-ar-annotation-close__")) {
+						closeButton.style.display ="none";
+						path.style.cursor = "default";
+						closeButton.style.cursor = "default";
+						path.setAttribute("fill", this.getFinalAnnotationColor(annotationAppearance, false));
+					}
+				});
+
+				closeButton.addEventListener("mouseleave", () => {
+					closeButton.style.display = "none";
+					path.style.cursor = "default";
+					closeButton.style.cursor = "default";
+					path.setAttribute("fill", this.getFinalAnnotationColor(annotationAppearance, false));
+				});
+
+				el.prepend(bubble);
+			}
+			else {
+				el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance);
+				el.addEventListener("mouseenter", () => {
+					el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, true);
+				});
+				el.addEventListener("mouseleave", () => {
+					el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, false);
+				});
+				el.style.cursor = "pointer";
+			}
+
+			el.style.color = `#${this.decimalToHex(annotationAppearance.fgColor)}`;
+
+			el.setAttribute("data-ar-type", annotation.type);
+			el.setAttribute("hidden", "");
 			this.annotationsContainer.append(el);
 		}
 	}
@@ -129,6 +175,207 @@ class AnnotationRenderer {
 		circle.setAttribute("r", 50);
 
 		svg.append(circle, path);
+		return svg;
+	}
+	createSvgSpeechBubble(x, y, width, height, pointX, pointY, color = "white", element, svg) {
+
+		const horizontalBaseStartMultiplier = 0.17379070765180116;
+		const horizontalBaseEndMultiplier = 0.14896346370154384;
+
+		const verticalBaseStartMultiplier = 0.12;
+		const verticalBaseEndMultiplier = 0.3;
+
+		let path;
+
+		if (!svg) {
+			svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+			svg.classList.add("__cxt-ar-annotation-speech-bubble__");
+
+			path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+			path.setAttribute("fill", color);
+			svg.append(path);
+		}
+		else {
+			path = svg.children[0];
+		}
+
+		svg.style.position = "absolute";
+		svg.setAttribute("width", "100%");
+		svg.setAttribute("height", "100%");
+		svg.style.left = "0";
+		svg.style.top = "0";
+
+		let positionStart;
+
+		let baseStartX = 0;
+		let baseStartY = 0;
+
+		let baseEndX = 0;
+		let baseEndY = 0;
+
+		let pointFinalX = pointX;
+		let pointFinalY = pointY;
+
+		let commentRectPath;
+		const pospad = 20;
+
+		let textWidth = 0;
+		let textHeight = 0;
+		let textX = 0;
+		let textY = 0;
+
+		let textElement;
+		let closeElement;
+
+		if (element) {
+			textElement = element.getElementsByTagName("span")[0];
+			closeElement = element.getElementsByClassName("__cxt-ar-annotation-close__")[0];
+		}
+
+		if (pointX > ((x + width) - (width / 2)) && pointY > y + height) {
+			positionStart = "br";
+			baseStartX = width - ((width * horizontalBaseStartMultiplier) * 2);
+			baseEndX = baseStartX + (width * horizontalBaseEndMultiplier);
+			baseStartY = height;
+			baseEndY = height;
+
+			pointFinalX = pointX - x;
+			pointFinalY = pointY - y;
+			element.style.height = pointY - y;
+			commentRectPath = `L${width} ${height} L${width} 0 L0 0 L0 ${baseStartY} L${baseStartX} ${baseStartY}`;
+			if (textElement) {
+				textWidth = width;
+				textHeight = height;
+				textX = 0;
+				textY = 0;
+			}
+		}
+		else if (pointX < ((x + width) - (width / 2)) && pointY > y + height) {
+			positionStart = "bl";
+			baseStartX = width * horizontalBaseStartMultiplier;
+			baseEndX = baseStartX + (width * horizontalBaseEndMultiplier);
+			baseStartY = height;
+			baseEndY = height;
+
+			pointFinalX = pointX - x;
+			pointFinalY = pointY - y;
+			element.style.height = `${pointY - y}px`;
+			commentRectPath = `L${width} ${height} L${width} 0 L0 0 L0 ${baseStartY} L${baseStartX} ${baseStartY}`;
+			if (textElement) {
+				textWidth = width;
+				textHeight = height;
+				textX = 0;
+				textY = 0;
+			}
+		}
+		else if (pointX > ((x + width) - (width / 2)) && pointY < (y - pospad)) {
+			positionStart = "tr";
+			baseStartX = width - ((width * horizontalBaseStartMultiplier) * 2);
+			baseEndX = baseStartX + (width * horizontalBaseEndMultiplier);
+
+			const yOffset = y - pointY;
+			baseStartY = yOffset;
+			baseEndY = yOffset;
+			element.style.top = y - yOffset + "px";
+			element.style.height = height + yOffset + "px";
+
+			pointFinalX = pointX - x;
+			pointFinalY = 0;
+			commentRectPath = `L${width} ${yOffset} L${width} ${height + yOffset} L0 ${height + yOffset} L0 ${yOffset} L${baseStartX} ${baseStartY}`;
+			if (textElement) {
+				textWidth = width;
+				textHeight = height;
+				textX = 0;
+				textY = yOffset;
+			}
+		}
+		else if (pointX < ((x + width) - (width / 2)) && pointY < y) {
+			positionStart = "tl";
+			baseStartX = width * horizontalBaseStartMultiplier;
+			baseEndX = baseStartX + (width * horizontalBaseEndMultiplier);
+
+			const yOffset = y - pointY;
+			baseStartY = yOffset;
+			baseEndY = yOffset;
+			element.style.top = y - yOffset + "px";
+			element.style.height = height + yOffset + "px";
+
+			pointFinalX = pointX - x;
+			pointFinalY = 0;
+			commentRectPath = `L${width} ${yOffset} L${width} ${height + yOffset} L0 ${height + yOffset} L0 ${yOffset} L${baseStartX} ${baseStartY}`;
+
+			if (textElement) {
+				textWidth = width;
+				textHeight = height;
+				textX = 0;
+				textY = yOffset;
+			}
+		}
+		else if (pointX > (x + width) && pointY > (y - pospad) && pointY < ((y + height) - pospad)) {
+			positionStart = "r";
+
+			const xOffset = pointX - (x + width);
+
+			baseStartX = width;
+			baseEndX = width;
+
+			element.style.width = width + xOffset + "px";
+
+			baseStartY = height * verticalBaseStartMultiplier;
+			baseEndY = baseStartY + (height * verticalBaseEndMultiplier);
+
+			pointFinalX = width + xOffset;
+			pointFinalY = pointY - y;
+			commentRectPath = `L${baseStartX} ${height} L0 ${height} L0 0 L${baseStartX} 0 L${baseStartX} ${baseStartY}`;
+			if (textElement) {
+				textWidth = width;
+				textHeight = height;
+				textX = 0;
+				textY = 0;
+			}
+		}
+		else if (pointX < x && pointY > y && pointY < (y + height)) {
+			positionStart = "l";
+
+			const xOffset = x - pointX;
+
+			baseStartX = xOffset;
+			baseEndX = xOffset;
+
+			element.style.left = x - xOffset + "px";
+			element.style.width = width + xOffset + "px";
+
+			baseStartY = height * verticalBaseStartMultiplier;
+			baseEndY = baseStartY + (height * verticalBaseEndMultiplier);
+
+			pointFinalX = 0;
+			pointFinalY = pointY - y;
+			commentRectPath = `L${baseStartX} ${height} L${width + baseStartX} ${height} L${width + baseStartX} 0 L${baseStartX} 0 L${baseStartX} ${baseStartY}`;
+			if (textElement) {
+				textWidth = width;
+				textHeight = height;
+				textX = xOffset;
+				textY = 0;
+			}
+		}
+
+		if (textElement) {
+			textElement.style.left = textX + "px";
+			textElement.style.top = textY + "px";
+			textElement.style.width = textWidth + "px";
+			textElement.style.height = textHeight + "px";
+		}
+		if (closeElement) {
+			const closeSize = parseFloat(this.annotationsContainer.style.getPropertyValue("--annotation-close-size"), 10);
+			if (closeSize) {
+				closeElement.style.left = ((textX + textWidth) + (closeSize / -1.8)) + "px";
+				closeElement.style.top = (textY + (closeSize / -1.8)) + "px";
+			}
+		}
+
+		const pathData = `M${baseStartX} ${baseStartY} L${pointFinalX} ${pointFinalY} L${baseEndX} ${baseEndY} ${commentRectPath}`;
+		path.setAttribute("d", pathData);
+
 		return svg;
 	}
 	getFinalAnnotationColor(annotation, hover = false) {
@@ -154,9 +401,15 @@ class AnnotationRenderer {
 
 			if (el.hasAttribute("hidden") && (videoTime >= start && videoTime < end)) {
 				el.removeAttribute("hidden");
+				if (annotation.style === "speech" && annotation.__speechBubble) {
+					annotation.__speechBubble.style.display = "block";
+				}
 			}
 			else if (!el.hasAttribute("hidden") && (videoTime < start || videoTime > end)) {
 				el.setAttribute("hidden", "");
+				if (annotation.style === "speech" && annotation.__speechBubble) {
+					annotation.__speechBubble.style.display = "none";
+				}
 			}
 		}
 	}
@@ -238,18 +491,32 @@ class AnnotationRenderer {
 		for (const annotation of annotations) {
 			const el = annotation.__element;
 
-			let ax = annotation.x;
-			let ay = annotation.y;
-			let aw = annotation.width;
-			let ah = annotation.height;
+			let ax = widthOffsetPercent + (annotation.x * widthMultiplier);
+			let ay = heightOffsetPercent + (annotation.y * heightMultiplier);
+			let aw = annotation.width * widthMultiplier;
+			let ah = annotation.height * heightMultiplier;
 
-			el.style.left = `${widthOffsetPercent + (ax * widthMultiplier)}%`;
+			el.style.left = `${ax}%`;
 			// el.style.left = `${ax}%`;
-			el.style.top = `${heightOffsetPercent + (ay * heightMultiplier)}%`;
+			el.style.top = `${ay}%`;
 
-			el.style.width = `${aw * widthMultiplier}%`;
+			el.style.width = `${aw}%`;
 			// el.style.width = `${aw}%`;
-			el.style.height = `${ah * heightMultiplier}%`;
+			el.style.height = `${ah}%`;
+
+			if (annotation.__speechBubble) {
+				const asx = this.percentToPixels(playerWidth, ax);
+				const asy = this.percentToPixels(playerHeight, ay);
+				const asw = this.percentToPixels(playerWidth, aw);
+				const ash = this.percentToPixels(playerHeight, ah);
+
+				let sx = widthOffsetPercent + (annotation.sx * widthMultiplier);
+				let sy = heightOffsetPercent + (annotation.sy * heightMultiplier);
+				sx = this.percentToPixels(playerWidth, sx);
+				sy = this.percentToPixels(playerHeight, sy);
+
+				this.createSvgSpeechBubble(asx, asy, asw, ash, sx, sy, null, annotation.__element, annotation.__speechBubble);
+			}
 
 			this.updateAnnotationTextSize(annotation, scaledVideoHeight);
 			this.updateCloseSize(scaledVideoHeight);
@@ -341,5 +608,8 @@ class AnnotationRenderer {
 	  	if (s[0] && s.length === 2) seconds += parseInt(s[0], 10);
 
 		return seconds;
+	}
+	percentToPixels(a, b) {
+		return a * b / 100;
 	}
 }
