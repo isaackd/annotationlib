@@ -3,7 +3,7 @@ class AnnotationRenderer {
 	static get defaultAppearanceAttributes() {
 		return {
 			bgColor: 0xFFFFFF,
-			bgOpacity: 0.70,
+			bgOpacity: 0.80,
 			fgColor: 0,
 			textSize: 3.15
 		};
