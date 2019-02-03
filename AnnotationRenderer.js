@@ -111,20 +111,22 @@ class AnnotationRenderer {
 				const bubbleColor = this.getFinalAnnotationColor(annotationAppearance, false);
 				const bubble = this.createSvgSpeechBubble(speechX, speechY, speechWidth, speechHeight, speechPointX, speechPointY, bubbleColor, annotation.__element);
 				bubble.style.display = "none";
+				bubble.style.overflow = "visible";
+				el.style.pointerEvents = "none";
 				bubble.__annotationEl = el;
 				annotation.__speechBubble = bubble;
 
 				const path = bubble.getElementsByTagName("path")[0];
 				path.addEventListener("mouseover", () => {
 					closeButton.style.display = "block";
-					path.style.cursor = "pointer";
+					// path.style.cursor = "pointer";
 					closeButton.style.cursor = "pointer";
 					path.setAttribute("fill", this.getFinalAnnotationColor(annotationAppearance, true));
 				});
 				path.addEventListener("mouseout", e => {
 					if (!e.relatedTarget.classList.contains("__cxt-ar-annotation-close__")) {
 						closeButton.style.display ="none";
-						path.style.cursor = "default";
+						// path.style.cursor = "default";
 						closeButton.style.cursor = "default";
 						path.setAttribute("fill", this.getFinalAnnotationColor(annotationAppearance, false));
 					}
@@ -139,7 +141,7 @@ class AnnotationRenderer {
 
 				el.prepend(bubble);
 			}
-			else {
+			else if (annotation.style !== "title") {
 				el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance);
 				el.addEventListener("mouseenter", () => {
 					el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, true);
@@ -147,7 +149,8 @@ class AnnotationRenderer {
 				el.addEventListener("mouseleave", () => {
 					el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, false);
 				});
-				el.style.cursor = "pointer";
+				if (annotation.actionType === "url")
+					el.style.cursor = "pointer";
 			}
 
 			el.style.color = `#${this.decimalToHex(annotationAppearance.fgColor)}`;
@@ -497,12 +500,27 @@ class AnnotationRenderer {
 			let ah = annotation.height * heightMultiplier;
 
 			el.style.left = `${ax}%`;
-			// el.style.left = `${ax}%`;
 			el.style.top = `${ay}%`;
 
 			el.style.width = `${aw}%`;
-			// el.style.width = `${aw}%`;
 			el.style.height = `${ah}%`;
+
+			let horizontalPadding = scaledVideoWidth * 0.008;
+			let verticalPadding = scaledVideoHeight * 0.008;
+
+			const pel = annotation.style === "speech"
+				? annotation.__element.getElementsByTagName("span")[0]
+				: el;
+
+			if (annotation.style === "speech") {
+				horizontalPadding *= 2;
+				verticalPadding *= 2;
+			}
+
+			pel.style.paddingLeft = horizontalPadding + "px";
+			pel.style.paddingRight = horizontalPadding + "px";
+			pel.style.paddingBottom = verticalPadding + "px";
+			pel.style.paddingTop = verticalPadding + "px";
 
 			if (annotation.__speechBubble) {
 				const asx = this.percentToPixels(playerWidth, ax);

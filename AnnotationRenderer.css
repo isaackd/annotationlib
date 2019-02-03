@@ -75,3 +75,7 @@
 	border: 1px solid rgba(255, 255, 255, 0.50);
 	background-color: transparent;
 }
+
+.__cxt-ar-annotation__ svg {
+	pointer-events: all;
+}
