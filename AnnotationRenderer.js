@@ -361,6 +361,9 @@ class AnnotationRenderer {
 				textY = 0;
 			}
 		}
+		else {
+			return svg;
+		}
 
 		if (textElement) {
 			textElement.style.left = textX + "px";
@@ -508,19 +511,22 @@ class AnnotationRenderer {
 			let horizontalPadding = scaledVideoWidth * 0.008;
 			let verticalPadding = scaledVideoHeight * 0.008;
 
-			const pel = annotation.style === "speech"
-				? annotation.__element.getElementsByTagName("span")[0]
-				: el;
-
-			if (annotation.style === "speech") {
+			if (annotation.style === "speech" && annotation.text) {
+				const pel = annotation.__element.getElementsByTagName("span")[0];
 				horizontalPadding *= 2;
 				verticalPadding *= 2;
-			}
 
-			pel.style.paddingLeft = horizontalPadding + "px";
-			pel.style.paddingRight = horizontalPadding + "px";
-			pel.style.paddingBottom = verticalPadding + "px";
-			pel.style.paddingTop = verticalPadding + "px";
+				pel.style.paddingLeft = horizontalPadding + "px";
+				pel.style.paddingRight = horizontalPadding + "px";
+				pel.style.paddingBottom = verticalPadding + "px";
+				pel.style.paddingTop = verticalPadding + "px";
+			}
+			else if (annotation.style !== "speech") {
+				el.style.paddingLeft = horizontalPadding + "px";
+				el.style.paddingRight = horizontalPadding + "px";
+				el.style.paddingBottom = verticalPadding + "px";
+				el.style.paddingTop = verticalPadding + "px";
+			}
 
 			if (annotation.__speechBubble) {
 				const asx = this.percentToPixels(playerWidth, ax);
