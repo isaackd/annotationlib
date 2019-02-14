@@ -28,22 +28,22 @@ const videoContainer = document.getElementById("video-container");
 <!-- HTML5 video element -->
 const video = document.getElementById("video");
 const renderer = new AnnotationRenderer(annotations, videoContainer, {
-	getVideoTime() {
-		return video.currentTime;
-	},
-	seekTo(seconds) {
-		video.currentTime = seconds;
-	},
-	getOriginalVideoWidth() {
-		return video.videoWidth;
-	},
-	getOriginalVideoHeight() {
-		return video.videoHeight;
-	}
+    getVideoTime() {
+        return video.currentTime;
+    },
+    seekTo(seconds) {
+        video.currentTime = seconds;
+    },
+    getOriginalVideoWidth() {
+        return video.videoWidth;
+    },
+    getOriginalVideoHeight() {
+        return video.videoHeight;
+    }
 });
 renderer.start();
 
 window.addEventListener("resize", e => {
-	renderer.updateAllAnnotationSizes();
+    renderer.updateAllAnnotationSizes();
 });
 ```
