@@ -5,7 +5,7 @@ import SpeechAnnotation from "./annotations/speech.js";
 
 class AnnotationRenderer {
 
-	constructor(annotations, container, playerOptions, updateInterval = 1000) {
+	constructor(annotations, container, playerOptions, updateInterval = 200) {
 		if (!annotations) throw new Error("Annotation objects must be provided");
 		if (!container) throw new Error("An element to contain the annotations must be provided");
 
