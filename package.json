@@ -1,0 +1,32 @@
+{
+  "name": "annotationlib",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:parser": "parcel build src/parser/index.js --out-dir dist --out-file AnnotationParser.js --no-source-maps",
+    "build:renderer": "parcel build src/renderer/index.js --out-dir dist --out-file AnnotationRenderer.js --no-source-maps",
+    "build:dist": "parcel build src/index.js --out-dir dist --out-file dist.js --no-source-maps",
+    "build": "npm run build:parser & npm run build:renderer & npm run build:dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/afrmtbl/annotationlib.git"
+  },
+  "keywords": [
+    "youtube",
+    "annotations"
+  ],
+  "author": "afrmtbl",
+  "license": "GPLv3",
+  "bugs": {
+    "url": "https://github.com/afrmtbl/annotationlib/issues"
+  },
+  "homepage": "https://github.com/afrmtbl/annotationlib#readme",
+  "dependencies": {
+    "annotations": "^0.1.340"
+  },
+  "devDependencies": {
+    "cssnano": "^4.1.9"
+  }
+}
