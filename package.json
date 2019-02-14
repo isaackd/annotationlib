@@ -1,7 +1,7 @@
 {
   "name": "annotationlib",
   "version": "1.0.0",
-  "description": "",
+  "description": "YouTube annotation parser and renderer",
   "main": "index.js",
   "scripts": {
     "build:parser": "parcel build src/parser/index.js --out-dir dist --out-file AnnotationParser.js --no-source-maps",
@@ -23,9 +23,7 @@
     "url": "https://github.com/afrmtbl/annotationlib/issues"
   },
   "homepage": "https://github.com/afrmtbl/annotationlib#readme",
-  "dependencies": {
-    "annotations": "^0.1.340"
-  },
+  "dependencies": {},
   "devDependencies": {
     "cssnano": "^4.1.9"
   }
