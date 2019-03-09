@@ -141,6 +141,12 @@ class AnnotationRenderer {
 
 				el.prepend(bubble);
 			}
+			else if (annotation.type === "highlight") {
+				el.style.backgroundColor = "";
+				el.style.border = `2.5px solid ${this.getFinalAnnotationColor(annotationAppearance, false)}`;
+				if (annotation.actionType === "url")
+					el.style.cursor = "pointer";
+			}
 			else if (annotation.style !== "title") {
 				el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance);
 				el.addEventListener("mouseenter", () => {
