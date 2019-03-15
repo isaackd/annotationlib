@@ -586,7 +586,7 @@ class AnnotationRenderer {
 			window.dispatchEvent(new CustomEvent("__ar_seek_to", {detail: {seconds}}));
 		}
 		else if (annotationData.actionType === "url") {
-			const data = {url: annotationData.actionUrl};
+			const data = {url: annotationData.actionUrl, target: annotationData.actionUrlTarget || "current"};
 
 			const timeHash = this.extractTimeHash(new URL(data.url));
 			if (timeHash && timeHash.hasOwnProperty("seconds")) {
