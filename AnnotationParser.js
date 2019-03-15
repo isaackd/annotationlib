@@ -17,6 +17,7 @@ class AnnotationParser {
 
 			actionType: "at",
 			actionUrl: "au",
+			actionUrlTarget: "aut",
 			actionSeconds: "as",
 
 			bgOpacity: "bgo",
@@ -37,8 +38,7 @@ class AnnotationParser {
 
 			let finalValue = "";
 
-			if (mappedKey === "text" || mappedKey === "actionType" || mappedKey === "actionUrl"
-				|| mappedKey === "type" || mappedKey === "style") {
+			if (["text", "actionType", "actionUrl", "actionUrlTarget", "type", "style"].indexOf(mappedKey) > -1) {
 				finalValue = decodeURIComponent(value);
 			}
 			else {
@@ -53,15 +53,11 @@ class AnnotationParser {
 		let serialized = "";
 		for (const key in annotation) {
 			const mappedKey = map[key];
-			if ((key === "text" || key === "actionType" || key === "actionUrl") 
-				&& mappedKey && annotation.hasOwnProperty(key)) {
-
+			if ((["text", "actionType", "actionUrl", "actionUrlTarget"].indexOf(key) > -1) && mappedKey && annotation.hasOwnProperty(key)) {
 				let text = encodeURIComponent(annotation[key]);
 				serialized += `${mappedKey}=${text},`;
 			}
-			else if (mappedKey && annotation.hasOwnProperty(key) &&
-				(key !== "text" && key !== "actionType" && key !== "actionUrl")) {
-
+			else if ((["text", "actionType", "actionUrl", "actionUrlTarget"].indexOf("key") === -1) && mappedKey && annotation.hasOwnProperty(key)) {
 				serialized += `${mappedKey}=${annotation[key]},`;
 			}
 		}
@@ -189,6 +185,7 @@ class AnnotationParser {
 
 		const urlElement = actionElement.getElementsByTagName("url")[0];
 		if (!urlElement) return null;
+		const actionUrlTarget = urlElement.getAttribute("target");
 		const href = urlElement.getAttribute("value");
 		// only allow links to youtube
 		// can be changed in the future
@@ -197,10 +194,10 @@ class AnnotationParser {
 			const srcVid = url.searchParams.get("src_vid");
 			const toVid = url.searchParams.get("v");
 
-			return this.linkOrTimestamp(url, srcVid, toVid);
+			return this.linkOrTimestamp(url, srcVid, toVid, actionUrlTarget);
 		}
 	}
-	linkOrTimestamp(url, srcVid, toVid) {
+	linkOrTimestamp(url, srcVid, toVid, actionUrlTarget) {
 		// check if it's a link to a new video
 		// or just a timestamp
 		if (srcVid && toVid && srcVid === toVid) {
@@ -213,7 +210,7 @@ class AnnotationParser {
 			return {actionType: "time", actionSeconds: seconds}
 		}
 		else {
-			return {actionType: "url", actionUrl: url.href};
+			return {actionType: "url", actionUrl: url.href, actionUrlTarget};
 		}
 	}
 	getAppearanceFromBase(base) {
