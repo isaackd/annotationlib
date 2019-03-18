@@ -89,6 +89,11 @@ class AnnotationRenderer {
 				annotationAppearance.bgOpacity = annotation.bgOpacity;
 			}
 
+			annotation.bgColor = annotationAppearance.bgColor;
+			annotation.bgOpacity = annotationAppearance.bgOpacity;
+			annotation.fgColor = annotationAppearance.fgColor;
+			annotation.textSize = annotationAppearance.textSize;
+
 			if (annotation.text) {
 				const textNode = document.createElement("span");
 				textNode.textContent = annotation.text;
