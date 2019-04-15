@@ -1,14 +1,4 @@
 class AnnotationRenderer {
-
-	static get defaultAppearanceAttributes() {
-		return {
-			bgColor: 0xFFFFFF,
-			bgOpacity: 0.80,
-			fgColor: 0,
-			textSize: 3.15
-		};
-	}
-
 	constructor(annotations, container, playerOptions, updateInterval = 1000) {
 		if (!annotations) throw new Error("Annotation objects must be provided");
 		if (!container) throw new Error("An element to contain the annotations must be provided");
@@ -69,31 +59,6 @@ class AnnotationRenderer {
 			});
 			el.append(closeButton);
 
-			// appearance
-			let annotationAppearance = this.constructor.defaultAppearanceAttributes;
-			if (!isNaN(annotation.textSize)) {
-				// text size calculations
-				// https://github.com/Seirade/YouTube-Annotation-Player/blob/ca763944c4bc947d44ba975c1f07fc0438b51cd3/annotations.js#L88
-				annotationAppearance.textSize = annotation.textSize;
-			}
-
-			if (!isNaN(annotation.fgColor)) {
-				annotationAppearance.fgColor = annotation.fgColor;
-			}
-
-			if (!isNaN(annotation.bgColor)) {
-				annotationAppearance.bgColor = annotation.bgColor;
-			}
-
-			if (!isNaN(annotation.bgOpacity)) {
-				annotationAppearance.bgOpacity = annotation.bgOpacity;
-			}
-
-			annotation.bgColor = annotationAppearance.bgColor;
-			annotation.bgOpacity = annotationAppearance.bgOpacity;
-			annotation.fgColor = annotationAppearance.fgColor;
-			annotation.textSize = annotationAppearance.textSize;
-
 			if (annotation.text) {
 				const textNode = document.createElement("span");
 				textNode.textContent = annotation.text;
@@ -112,7 +77,7 @@ class AnnotationRenderer {
 				const speechPointX = this.percentToPixels(containerDimensions.width, annotation.sx);
 				const speechPointY = this.percentToPixels(containerDimensions.height, annotation.sy);
 
-				const bubbleColor = this.getFinalAnnotationColor(annotationAppearance, false);
+				const bubbleColor = this.getFinalAnnotationColor(annotation, false);
 				const bubble = this.createSvgSpeechBubble(speechX, speechY, speechWidth, speechHeight, speechPointX, speechPointY, bubbleColor, annotation.__element);
 				bubble.style.display = "none";
 				bubble.style.overflow = "visible";
@@ -125,14 +90,14 @@ class AnnotationRenderer {
 					closeButton.style.display = "block";
 					// path.style.cursor = "pointer";
 					closeButton.style.cursor = "pointer";
-					path.setAttribute("fill", this.getFinalAnnotationColor(annotationAppearance, true));
+					path.setAttribute("fill", this.getFinalAnnotationColor(annotation, true));
 				});
 				path.addEventListener("mouseout", e => {
 					if (!e.relatedTarget.classList.contains("__cxt-ar-annotation-close__")) {
 						closeButton.style.display ="none";
 						// path.style.cursor = "default";
 						closeButton.style.cursor = "default";
-						path.setAttribute("fill", this.getFinalAnnotationColor(annotationAppearance, false));
+						path.setAttribute("fill", this.getFinalAnnotationColor(annotation, false));
 					}
 				});
 
@@ -140,30 +105,30 @@ class AnnotationRenderer {
 					closeButton.style.display = "none";
 					path.style.cursor = "default";
 					closeButton.style.cursor = "default";
-					path.setAttribute("fill", this.getFinalAnnotationColor(annotationAppearance, false));
+					path.setAttribute("fill", this.getFinalAnnotationColor(annotation, false));
 				});
 
 				el.prepend(bubble);
 			}
 			else if (annotation.type === "highlight") {
 				el.style.backgroundColor = "";
-				el.style.border = `2.5px solid ${this.getFinalAnnotationColor(annotationAppearance, false)}`;
+				el.style.border = `2.5px solid ${this.getFinalAnnotationColor(annotation, false)}`;
 				if (annotation.actionType === "url")
 					el.style.cursor = "pointer";
 			}
 			else if (annotation.style !== "title") {
-				el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance);
+				el.style.backgroundColor = this.getFinalAnnotationColor(annotation);
 				el.addEventListener("mouseenter", () => {
-					el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, true);
+					el.style.backgroundColor = this.getFinalAnnotationColor(annotation, true);
 				});
 				el.addEventListener("mouseleave", () => {
-					el.style.backgroundColor = this.getFinalAnnotationColor(annotationAppearance, false);
+					el.style.backgroundColor = this.getFinalAnnotationColor(annotation, false);
 				});
 				if (annotation.actionType === "url")
 					el.style.cursor = "pointer";
 			}
 
-			el.style.color = `#${this.decimalToHex(annotationAppearance.fgColor)}`;
+			el.style.color = `#${this.decimalToHex(annotation.fgColor)}`;
 
 			el.setAttribute("data-ar-type", annotation.type);
 			el.setAttribute("hidden", "");

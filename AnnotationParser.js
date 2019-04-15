@@ -1,4 +1,13 @@
 class AnnotationParser {
+	static get defaultAppearanceAttributes() {
+		return {
+			bgColor: 0xFFFFFF,
+			bgOpacity: 0.80,
+			fgColor: 0,
+			textSize: 3.15
+		};
+	}
+
 	static get attributeMap() {
 		return {
 			type: "tp",
@@ -215,6 +224,8 @@ class AnnotationParser {
 	}
 	getAppearanceFromBase(base) {
 		const appearanceElement = base.getElementsByTagName("appearance")[0];
+		const styles = this.constructor.defaultAppearanceAttributes;
+
 		if (appearanceElement) {
 			const bgOpacity = appearanceElement.getAttribute("bgAlpha");
 			const bgColor = appearanceElement.getAttribute("bgColor");
@@ -223,7 +234,6 @@ class AnnotationParser {
 			// not yet sure what to do with effects 
 			// const effects = appearanceElement.getAttribute("effects");
 
-			const styles = {};
 			// 0.00 to 1.00
 			if (bgOpacity) styles.bgOpacity = parseFloat(bgOpacity, 10);
 			// 0 to 256 ** 3
@@ -231,9 +241,9 @@ class AnnotationParser {
 			if (fgColor) styles.fgColor = parseInt(fgColor, 10);
 			// 0.00 to 100.00?
 			if (textSize) styles.textSize = parseFloat(textSize, 10);
-
-			return styles;
 		}
+
+		return styles;
 	}
 
 	/* helper functions */
