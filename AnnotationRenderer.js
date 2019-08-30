@@ -131,6 +131,7 @@ class AnnotationRenderer {
 			el.style.color = `#${this.decimalToHex(annotation.fgColor)}`;
 
 			el.setAttribute("data-ar-type", annotation.type);
+			el.setAttribute("data-ar-style", annotation.style);
 			el.setAttribute("hidden", "");
 			this.annotationsContainer.append(el);
 		}
