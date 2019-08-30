@@ -4,9 +4,16 @@
   "description": "YouTube annotation parser and renderer",
   "main": "index.js",
   "scripts": {
-    "build:parser": "parcel build src/parser/index.js --out-dir dist --out-file AnnotationParser.js --no-source-maps",
-    "build:renderer": "parcel build src/renderer/index.js --out-dir dist --out-file AnnotationRenderer.js --no-source-maps",
-    "build": "npm run build:parser & npm run build:renderer"
+    "build:parser": "px -i src/parser/index.js -o dist/AnnotationParser.js -E -M",
+    "build:renderer": "px -i src/renderer/index.js -o dist/AnnotationRenderer.js -E -M & cleancss -o dist/AnnotationRenderer.css src/renderer/index.css",
+
+    "minify:parser": "uglifyjs --compress --mangle -o dist/AnnotationParser.js -- dist/AnnotationParser.js",
+    "minify:renderer": "uglifyjs --compress --mangle -o dist/AnnotationRenderer.js -- dist/AnnotationRenderer.js",
+
+    "build": "npm run build:parser & npm run build:renderer",
+    "minify": "npm run minify:parser & npm run minify:renderer",
+
+    "release": "npm run build & npm run minify"
   },
   "repository": {
     "type": "git",
@@ -23,7 +30,5 @@
   },
   "homepage": "https://github.com/afrmtbl/annotationlib#readme",
   "dependencies": {},
-  "devDependencies": {
-    "cssnano": "^4.1.9"
-  }
+  "devDependencies": {}
 }

@@ -294,7 +294,7 @@ class SpeechAnnotation extends NoteAnnotation {
 	setPadding(h, v) {
 		h = (h * this.paddingMultiplier) + "px";
 		v = (v * this.paddingMultiplier) + "px";
-		this.textElement.style.padding = `${v} ${h} ${v} ${h}`;
+		if (this.textElement) this.textElement.style.padding = `${v} ${h} ${v} ${h}`;
 	}
 
 }
