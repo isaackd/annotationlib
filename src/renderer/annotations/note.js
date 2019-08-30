@@ -61,6 +61,10 @@ class NoteAnnotation {
 			appearance.bgColor = this.data.bgColor;
 		}
 
+		if (!isNaN(this.data.bgOpacity)) {
+			appearance.bgOpacity = this.data.bgOpacity;
+		}
+
 		this.data.bgColor = appearance.bgColor;
 		this.data.bgOpacity = appearance.bgOpacity;
 		this.data.fgColor = appearance.fgColor;
