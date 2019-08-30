@@ -47,3 +47,8 @@ window.addEventListener("resize", e => {
     renderer.updateAllAnnotationSizes();
 });
 ```
+
+## Building
+1. Install [Pax](https://pax.js.org/) to build the JS
+2. Run `npm install uglify-es -g` and `npm install clean-css-cli -g` for minification tools
+3. Make changes then run `npm run release`
