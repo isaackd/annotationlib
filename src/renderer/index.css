@@ -75,3 +75,19 @@
 .__cxt-ar-annotation__ svg {
 	pointer-events: all;
 }
+
+.__cxt-ar-annotation__[data-ar-style="title"] span {
+    font-weight: bold;
+    position: relative;
+    /*Flexbox code from https://stackoverflow.com/a/25799339 http://jsfiddle.net/yeaqrh48/ */
+    display: -webkit-flexbox;
+    display: -ms-flexbox;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-align: center;
+    -ms-flex-align: center;
+    -webkit-align-items: center;
+    align-items: center;
+    justify-content: center;
+    /*End Flexbox code*/
+}
