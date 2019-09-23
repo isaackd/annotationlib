@@ -1,5 +1,6 @@
 import NoteAnnotation from "./annotations/note.js";
 import SpeechAnnotation from "./annotations/speech.js";
+import HighlightAnnotation from "./annotations/highlight.js";
 
 class AnnotationRenderer {
 
@@ -48,6 +49,9 @@ class AnnotationRenderer {
 			let annotation;
 			if (data.style === "speech") {
 				annotation = new SpeechAnnotation(data);
+			}
+			else if (data.type === "highlight") {
+				annotation = new HighlightAnnotation(data);
 			}
 			else {
 				annotation = new NoteAnnotation(data);
