@@ -212,7 +212,7 @@ class AnnotationRenderer {
 			annotationElement = annotationElement.closest(".__cxt-ar-annotation__");
 			if (!annotationElement) return null;
 		} 
-		let annotationData = annotationElement.__annotation;
+		let annotationData = annotationElement.__annotationData;
 
 		if (!annotationElement || !annotationData) return;
 

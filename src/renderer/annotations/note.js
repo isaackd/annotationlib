@@ -16,6 +16,8 @@ class NoteAnnotation {
 		this.element = document.createElement("div");
 		this.element.classList.add("__cxt-ar-annotation__");
 
+		this.element.__annotationData = this.data;
+
 		this.closeElement = this.setupCloseElement();
 		this.element.append(this.closeElement);
 
