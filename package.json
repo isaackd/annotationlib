@@ -6,13 +6,10 @@
   "scripts": {
     "build:parser": "px -i src/parser/index.js -o dist/AnnotationParser.js -E -M",
     "build:renderer": "px -i src/renderer/index.js -o dist/AnnotationRenderer.js -E -M & cleancss -o dist/AnnotationRenderer.css src/renderer/index.css",
-
     "minify:parser": "uglifyjs --compress --mangle -o dist/AnnotationParser.js -- dist/AnnotationParser.js",
     "minify:renderer": "uglifyjs --compress --mangle -o dist/AnnotationRenderer.js -- dist/AnnotationRenderer.js",
-
     "build": "npm run build:parser & npm run build:renderer",
     "minify": "npm run minify:parser & npm run minify:renderer",
-
     "release": "npm run build & npm run minify"
   },
   "repository": {
@@ -30,5 +27,8 @@
   },
   "homepage": "https://github.com/afrmtbl/annotationlib#readme",
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "clean-css-cli": "^4.3.0",
+    "uglify-es": "^3.3.9"
+  }
 }
