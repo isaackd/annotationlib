@@ -33,7 +33,9 @@ class NoteAnnotation {
 		}
 
 		this.element.setAttribute("data-ar-type", this.data.type);
-		this.element.setAttribute("data-ar-style", this.data.style);
+		if (this.data.style) {
+			this.element.setAttribute("data-ar-style", this.data.style);
+		}
 		this.element.setAttribute("hidden", "");
 
 		// options to make it easier for other annotation types

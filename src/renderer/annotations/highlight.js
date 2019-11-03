@@ -4,7 +4,7 @@ class HighlightAnnotation extends NoteAnnotation {
 	constructor(annotationData) {
 		super(annotationData);
 
-		const { bgOpacity, bgColor } = this.data;
+		const { bgOpacity } = this.data;
 
 		this.element.style.backgroundColor = "";
 		this.element.style.border = `2.5px solid ${getFinalAnnotationColor(bgOpacity, 8748933, false)}`;
