@@ -119,6 +119,9 @@ class SpeechAnnotation extends NoteAnnotation {
 		this.speechTriangle.setAttribute("fill", color);
 		this.speechSvg.append(this.speechTriangle);
 
+		const { bgOpacity, bgColor } = this.data;
+		this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, false));
+
 		this.element.prepend(this.speechSvg);
 	}
 
