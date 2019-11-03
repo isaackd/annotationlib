@@ -1,6 +1,7 @@
 import NoteAnnotation from "./annotations/note.js";
 import SpeechAnnotation from "./annotations/speech.js";
 import HighlightAnnotation from "./annotations/highlight.js";
+import HighlightTextAnnotation from "./annotations/highlightText.js";
 
 class AnnotationRenderer {
 
@@ -45,6 +46,10 @@ class AnnotationRenderer {
 		this.start();
 	}
 	createAnnotationElements(annotationsData) {
+
+		const highlightAnnotations = {};
+		const highlightTextAnnotations = {};
+
 		for (const data of annotationsData) {
 			let annotation;
 			if (data.style === "speech") {
@@ -52,14 +57,33 @@ class AnnotationRenderer {
 			}
 			else if (data.type === "highlight") {
 				annotation = new HighlightAnnotation(data);
+				highlightAnnotations[data.id] = annotation;
+			}
+			else if (data.style === "highlightText") {
+				highlightTextAnnotations[data.highlightId] = data;
 			}
 			else {
 				annotation = new NoteAnnotation(data);
 			}
 
-			this.annotations.push(annotation);
-			this.annotationsContainer.append(annotation.element);
+			if (annotation) {
+				this.annotations.push(annotation);
+				this.annotationsContainer.append(annotation.element);
+			}
 		}
+
+		for (const highlightId in highlightAnnotations) {
+			const highlightTextData = highlightTextAnnotations[highlightId];
+			
+			if (highlightTextData) {
+				const parent = highlightAnnotations[highlightId];
+				const annotation = new HighlightTextAnnotation(highlightTextData, parent);
+
+				this.annotations.push(annotation);
+				this.annotationsContainer.append(annotation.element);
+			}
+		}
+
 	}
 	createCloseElement() {
 		const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -88,7 +112,7 @@ class AnnotationRenderer {
 	}
 	update(videoTime) {
 		for (const annotation of this.annotations) {
-			if (annotation.closed) continue;
+			if (annotation.closed || annotation.style === "highlightText") continue;
 
 			const start = annotation.data.timeStart;
 			const end = annotation.data.timeEnd;
