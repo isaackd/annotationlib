@@ -1,6 +1,6 @@
 # annotationlib
 
-****For other projects looking to support annotations. 
+****annotationlib is intended for other projects looking to support annotations. 
 If you're instead looking to view YouTube annotations again, 
 check out [AnnotationsRestored](https://github.com/afrmtbl/AnnotationsRestored), [AnnotationsReloaded](https://addons.mozilla.org/firefox/addon/annotationsreloaded/), and https://invidio.us.***
 
@@ -45,6 +45,21 @@ renderer.start();
 
 window.addEventListener("resize", e => {
     renderer.updateAllAnnotationSizes();
+});
+```
+
+### Click Events
+
+Each time an annotation that has a link attached to it is clicked, the event `__ar_annotation_click` is fired on `window`, with `e.detail.url` set to the url.
+
+`e.detail` also includes `seconds` if the link that was clicked on is a video with a timestamp hash (e.g. `#t=38s`).
+```javascript
+window.addEventListener("__ar_annotation_click", e => {
+    const url = e.detail.url;
+    // redirect to the url
+    window.location.href = url;
+    // or provide a custom redirect
+    // window.location.href = `www.example.com/redirect?url=${url}`;
 });
 ```
 
