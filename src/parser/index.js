@@ -23,7 +23,11 @@ class AnnotationParser {
 			bgOpacity: "bgo",
 			bgColor: "bgc",
 			fgColor: "fgc",
-			textSize: "txsz"
+			textSize: "txsz",
+			// Used for highlightText annotations
+			// Is set to the ID of the highlight annotation
+			// that will trigger the highlightText
+			highlightId: "hid"
 		};
 	}
 
@@ -38,7 +42,7 @@ class AnnotationParser {
 
 			let finalValue = "";
 
-			if (["text", "actionType", "actionUrl", "actionUrlTarget", "type", "style"].indexOf(mappedKey) > -1) {
+			if (["text", "actionType", "actionUrl", "actionUrlTarget", "type", "style"].includes(mappedKey)) {
 				finalValue = decodeURIComponent(value);
 			}
 			else {
@@ -53,13 +57,12 @@ class AnnotationParser {
 		let serialized = "";
 		for (const key in annotation) {
 			const mappedKey = map[key];
-			if ((["text", "actionType", "actionUrl", "actionUrlTarget"].indexOf(key) > -1) && mappedKey && annotation.hasOwnProperty(key)) {
-
+			const textKeys = ["text", "actionType", "actionUrl", "actionUrlTarget"];
+			if (textKeys.includes(key) && mappedKey && annotation.hasOwnProperty(key)) {
 				let text = encodeURIComponent(annotation[key]);
 				serialized += `${mappedKey}=${text},`;
 			}
-			else if ((["text", "actionType", "actionUrl", "actionUrlTarget"].indexOf("key") === -1) && mappedKey && annotation.hasOwnProperty(key)) {
-
+			else if (!textKeys.includes(key) && mappedKey && annotation.hasOwnProperty(key)) {
 				serialized += `${mappedKey}=${annotation[key]},`;
 			}
 		}
@@ -115,7 +118,7 @@ class AnnotationParser {
 		const timeStart = backgroundShape.timeRange.start;
 		const timeEnd = backgroundShape.timeRange.end;
 
-		if (isNaN(timeStart) || isNaN(timeEnd) || timeStart === null || timeEnd === null) {
+		if (attributes.style !== "highlightText" && (isNaN(timeStart) || isNaN(timeEnd) || timeStart === null || timeEnd === null)) {
 			return null;
 		}
 
@@ -142,6 +145,17 @@ class AnnotationParser {
 
 		if (backgroundShape.hasOwnProperty("sx")) annotation.sx = backgroundShape.sx;
 		if (backgroundShape.hasOwnProperty("sy")) annotation.sy = backgroundShape.sy;
+
+		if (annotation.type === "highlight") {
+			annotation.id = attributes.id;
+		}
+		else if (annotation.style === "highlightText") {
+			const highlightId = this.getTriggerFromBase(base);
+			if (highlightId) annotation.highlightId = highlightId;
+
+			delete annotation.timeStart;
+			delete annotation.timeEnd;
+		}
 
 		return annotation;
 	}
@@ -172,8 +186,11 @@ class AnnotationParser {
 	}
 	getAttributesFromBase(base) {
 		const attributes = {};
+
+		attributes.id = base.getAttribute("id");
 		attributes.type = base.getAttribute("type");
 		attributes.style = base.getAttribute("style");
+
 		return attributes;
 	}
 	getTextFromBase(base) {
@@ -220,7 +237,10 @@ class AnnotationParser {
 		if (appearanceElement) {
 			const bgOpacity = appearanceElement.getAttribute("bgAlpha");
 			const bgColor = appearanceElement.getAttribute("bgColor");
+
 			const fgColor = appearanceElement.getAttribute("fgColor");
+			const highlightColor = appearanceElement.getAttribute("highlightFontColor");
+
 			const textSize = appearanceElement.getAttribute("textSize");
 			// not yet sure what to do with effects 
 			// const effects = appearanceElement.getAttribute("effects");
@@ -230,12 +250,22 @@ class AnnotationParser {
 			if (bgOpacity) styles.bgOpacity = parseFloat(bgOpacity, 10);
 			// 0 to 256 ** 3
 			if (bgColor) styles.bgColor = parseInt(bgColor, 10);
+
+			if (highlightColor) styles.fgColor = parseInt(highlightColor, 10);
 			if (fgColor) styles.fgColor = parseInt(fgColor, 10);
 			// 0.00 to 100.00?
 			if (textSize) styles.textSize = parseFloat(textSize, 10);
 
 			return styles;
 		}
+	}
+	getTriggerFromBase(base) {
+		const triggerElement = base.getElementsByTagName("trigger")[0];
+		const conditionElement = base.getElementsByTagName("condition")[0];
+
+		const highlightId = conditionElement.getAttribute("ref");
+
+		return highlightId;
 	}
 
 	/* helper functions */
