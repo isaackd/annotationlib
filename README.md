@@ -64,6 +64,5 @@ window.addEventListener("__ar_annotation_click", e => {
 ```
 
 ## Building
-1. Install [Pax](https://pax.js.org/) to bundle the JS
-2. Run `npm install uglify-es -g` and `npm install clean-css-cli -g` for minification tools
-3. Make changes then run `npm run release`
+1. Run `npm install` to install the dev dependencies (Rollup, Uglify, CleanCSS)
+2. Make changes and run `npm run release`
