@@ -42,8 +42,8 @@ class SpeechAnnotation extends NoteAnnotation {
 		return 0.3;
 	}
 
-	constructor(annotationData) {
-		super(annotationData);
+	constructor(annotationData, closeElement) {
+		super(annotationData, closeElement);
 
 		this.createSpeechBubble();
 		this.setupHoverAppearance();
@@ -251,10 +251,10 @@ class SpeechAnnotation extends NoteAnnotation {
 			this.textElement.style.width = this.textWidth + "px";
 			this.textElement.style.height = this.textHeight + "px";
 		}
-		if (this.closeElement && this.closeButtonSize) {
-			this.closeElement.style.left = ((this.textX + this.textWidth) + (this.closeButtonSize / this.closeButtonOffset)) + "px";
-			this.closeElement.style.top = (this.textY + (this.closeButtonSize / this.closeButtonOffset)) + "px";
-		}
+		// if (this.closeElement && this.closeButtonSize) {
+		// 	this.closeElement.style.left = ((this.textX + this.textWidth) + (this.closeButtonSize / this.closeButtonOffset)) + "px";
+		// 	this.closeElement.style.top = (this.textY + (this.closeButtonSize / this.closeButtonOffset)) + "px";
+		// }
 
 		const pathData = `M${this.baseStartX} ${this.baseStartY} L${this.pointX} ${this.pointY} L${this.baseEndX} ${this.baseEndY} ${commentRectPath}`;
 		this.speechTriangle.setAttribute("d", pathData);
@@ -271,24 +271,36 @@ class SpeechAnnotation extends NoteAnnotation {
 	setupHoverAppearance() {
 		const { bgOpacity, bgColor } = this.data;
 		this.speechTriangle.addEventListener("mouseover", () => {
+
+			this.closeElement.currentAnnotation = this;
+			this.closeElement.lastAnnotation = this;
+			// this.closeElement.style.cursor = "pointer";
+
+			const rect = this.element.getBoundingClientRect();
+			const halfSize = this.closeButtonSize / 2;
+			this.closeElement.style.left = rect.right - halfSize + "px";
+			this.closeElement.style.top = rect.top - halfSize + "px";
 			this.closeElement.style.display = "block";
-			this.closeElement.style.cursor = "pointer";
+
 			this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, true));
 		});
 		this.speechTriangle.addEventListener("mouseout", e => {
-			if (!e.relatedTarget.classList.contains("__cxt-ar-annotation-close__")) {
-				this.closeElement.style.display ="none";
-				this.closeElement.style.cursor = "default";
-				this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, false));
-			}
+			// if (!e.relatedTarget.classList.contains("__cxt-ar-annotation-close__")) {
+			// 	this.closeElement.style.display ="none";
+			// 	// this.closeElement.style.cursor = "default";
+			// 	this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, false));
+			// }
+
+			this.closeElement.currentAnnotation = null;
+
+			setTimeout(() => {
+				if (!this.closeElement.hovered && this.closeElement.currentAnnotation === null) {
+					this.closeElement.style.display = "none";
+					this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, false));
+				}
+			}, 100);
 		});
 
-		this.closeElement.addEventListener("mouseleave", () => {
-			this.closeElement.style.display = "none";
-			this.closeElement.style.cursor = "default";
-			this.speechTriangle.style.cursor = "default";
-			this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, false));
-		});
 		if (this.data.actionType === "url") {
 			this.element.style.cursor = "pointer";
 		}

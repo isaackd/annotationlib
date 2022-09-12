@@ -1,10 +1,10 @@
 import { NoteAnnotation } from "./note.js";
 
 class HighlightTextAnnotation extends NoteAnnotation {
-	constructor(annotationData, parentAnnotation) {
+	constructor(annotationData, closeElement, parentAnnotation) {
 		annotationData.x += parentAnnotation.data.x;
 		annotationData.y += parentAnnotation.data.y;
-		super(annotationData);
+		super(annotationData, closeElement);
 
 		this.element.style.backgroundColor = "";
 		this.element.style.border = "";
@@ -17,7 +17,8 @@ class HighlightTextAnnotation extends NoteAnnotation {
 			this.hide();
 		});
 
-		this.closeElement.remove();
+		this.closeElement.style.display = "none";
+		this.closeElement.style.cursor = "default";
 	}
 
 	setupHoverAppearance() {

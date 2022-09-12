@@ -1,4 +1,4 @@
-import NoteAnnotation from "./annotations/note.js";
+import { NoteAnnotation, getFinalAnnotationColor }  from "./annotations/note.js";
 import SpeechAnnotation from "./annotations/speech.js";
 import HighlightAnnotation from "./annotations/highlight.js";
 import HighlightTextAnnotation from "./annotations/highlightText.js";
@@ -25,6 +25,37 @@ class AnnotationRenderer {
 		this.annotationsContainer.addEventListener("click", e => {
 			this.annotationClickHandler(e);
 		});
+
+		this.closeElement = this.createCloseElement();
+		this.closeElement.style.cursor = "pointer";
+		this.closeElement.addEventListener("click", () => {
+			const lastAnnotation = this.closeElement.lastAnnotation;
+			lastAnnotation.element.setAttribute("data-ar-closed", "");
+			lastAnnotation.element.setAttribute("hidden", "");
+
+			this.closeElement.style.display = "none";
+			this.closeElement.style.cursor = "default";
+		});
+
+		this.closeElement.addEventListener("mouseenter", () => {
+			this.closeElement.hovered = true;
+		});
+
+		this.closeElement.addEventListener("mouseleave", () => {
+			const lastAnnotation = this.closeElement.lastAnnotation;
+			this.closeElement.style.display = "none";
+
+			if (lastAnnotation && lastAnnotation.speechTriangle) {
+				const { bgOpacity, bgColor } = lastAnnotation.data;		
+				lastAnnotation.speechTriangle.style.cursor = "default";
+				lastAnnotation.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, false));
+			}
+
+			this.closeElement.hovered = false;
+		});
+
+		document.body.append(this.closeElement);
+
 		this.container.prepend(this.annotationsContainer);
 
 		this.createAnnotationElements(annotations);
@@ -53,17 +84,17 @@ class AnnotationRenderer {
 		for (const data of annotationsData) {
 			let annotation;
 			if (data.style === "speech") {
-				annotation = new SpeechAnnotation(data);
+				annotation = new SpeechAnnotation(data, this.closeElement);
 			}
 			else if (data.type === "highlight") {
-				annotation = new HighlightAnnotation(data);
+				annotation = new HighlightAnnotation(data, this.closeElement);
 				highlightAnnotations[data.id] = annotation;
 			}
 			else if (data.style === "highlightText") {
 				highlightTextAnnotations[data.highlightId] = data;
 			}
 			else {
-				annotation = new NoteAnnotation(data);
+				annotation = new NoteAnnotation(data, this.closeElement);
 			}
 
 			if (annotation) {
@@ -77,7 +108,7 @@ class AnnotationRenderer {
 			
 			if (highlightTextData) {
 				const parent = highlightAnnotations[highlightId];
-				const annotation = new HighlightTextAnnotation(highlightTextData, parent);
+				const annotation = new HighlightTextAnnotation(highlightTextData, this.closeElement, parent);
 
 				this.annotations.push(annotation);
 				this.annotationsContainer.append(annotation.element);

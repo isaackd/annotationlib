@@ -51,10 +51,10 @@
 	display: none;
 	position: absolute;
 
-	cursor: pointer;
+	cursor: pointer !important;
 
 	/* place the close button above the speech bubble svg */
-	z-index: 1;
+	z-index: 999;
 }
 /*.__cxt-ar-annotation__:hover:not([hidden]):not([data-ar-closed]) .__cxt-ar-annotation-close__ {
 	display: block;

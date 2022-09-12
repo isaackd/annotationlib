@@ -8,18 +8,16 @@ class NoteAnnotation {
 		};
 	}
 
-	constructor(annotationData) {
+	constructor(annotationData, closeElement) {
 		if (!annotationData) throw new Error("Annotation data must be provided");
 
 		this.data = annotationData;
+		this.closeElement = closeElement;
 
 		this.element = document.createElement("div");
 		this.element.classList.add("__cxt-ar-annotation__");
 
 		this.element.__annotationData = this.data;
-
-		this.closeElement = this.setupCloseElement();
-		this.element.append(this.closeElement);
 
 		if (this.data.text) {
 			this.textElement = document.createElement("span");
@@ -44,14 +42,6 @@ class NoteAnnotation {
 		this.paddingMultiplier = 1;
 		this.closeButtonScaling = 0.0423;
 		this.closeButtonOffset = -1.8;
-	}
-	setupCloseElement() {
-		const closeButton = this.createCloseElement();
-		closeButton.addEventListener("click", e => {
-			this.element.setAttribute("hidden", "");
-			this.element.setAttribute("data-ar-closed", "");
-		});
-		return closeButton;
 	}
 	setupAppearance() {
 		let appearance = this.constructor.defaultAppearanceAttributes;
@@ -86,11 +76,27 @@ class NoteAnnotation {
 
 		this.element.addEventListener("mouseenter", () => {
 			this.element.style.backgroundColor = getFinalAnnotationColor(bgOpacity, bgColor, true);
+
+			this.closeElement.currentAnnotation = this;
+			this.closeElement.lastAnnotation = this;
+			
 			this.closeElement.style.display = "block";
+
+			const halfSize = this.closeButtonSize / 2;
+
+			const rect = this.element.getBoundingClientRect();
+			this.closeElement.style.left = rect.right - halfSize + "px";
+			this.closeElement.style.top = rect.top - halfSize + "px";
 		});
 		this.element.addEventListener("mouseleave", () => {
 			this.element.style.backgroundColor = getFinalAnnotationColor(bgOpacity, bgColor, false);
-			this.closeElement.style.display = "none";
+			this.closeElement.currentAnnotation = null;
+
+			setTimeout(() => {
+				if (!this.closeElement.hovered && this.closeElement.currentAnnotation === null) {
+					this.closeElement.style.display = "none";
+				}
+			}, 100);
 		});
 		if (this.data.actionType === "url") {
 			this.element.style.cursor = "pointer";
