@@ -4,13 +4,13 @@
   "description": "YouTube annotation parser and renderer",
   "main": "index.js",
   "scripts": {
-    "build:parser": "px -i src/parser/index.js -o dist/AnnotationParser.js -E -M",
-    "build:renderer": "px -i src/renderer/index.js -o dist/AnnotationRenderer.js -E -M & cleancss -o dist/AnnotationRenderer.css src/renderer/index.css",
-    "minify:parser": "uglifyjs --compress --mangle -o dist/AnnotationParser.js -- dist/AnnotationParser.js",
-    "minify:renderer": "uglifyjs --compress --mangle -o dist/AnnotationRenderer.js -- dist/AnnotationRenderer.js",
-    "build": "npm run build:parser & npm run build:renderer",
-    "minify": "npm run minify:parser & npm run minify:renderer",
-    "release": "npm run build & npm run minify"
+    "build:parser": "rollup src/parser/index.js --file dist/AnnotationParser.js",
+    "build:renderer": "rollup src/renderer/index.js --file dist/AnnotationRenderer.js && cleancss -o dist/AnnotationRenderer.css src/renderer/index.css",
+    "minify:parser": "terser --compress --mangle -o dist/AnnotationParser.js -- dist/AnnotationParser.js",
+    "minify:renderer": "terser --compress --mangle -o dist/AnnotationRenderer.js -- dist/AnnotationRenderer.js",
+    "build": "npm run build:parser && npm run build:renderer",
+    "minify": "npm run minify:parser && npm run minify:renderer",
+    "release": "npm run build && npm run minify"
   },
   "repository": {
     "type": "git",
@@ -26,9 +26,9 @@
     "url": "https://github.com/afrmtbl/annotationlib/issues"
   },
   "homepage": "https://github.com/afrmtbl/annotationlib#readme",
-  "dependencies": {},
   "devDependencies": {
-    "clean-css-cli": "^4.3.0",
-    "uglify-es": "^3.3.9"
+    "clean-css-cli": "^5.6.1",
+    "rollup": "^2.79.0",
+    "terser": "^5.15.0"
   }
 }
