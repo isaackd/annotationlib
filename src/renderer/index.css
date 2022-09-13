@@ -9,7 +9,7 @@
 	top: 0px;
 	left: 0px;
 
-	pointer-events: none;
+	pointer-events: none !important;
 	overflow: hidden;
 }
 
@@ -25,7 +25,7 @@
 }
 
 .__cxt-ar-annotation__ {
-	pointer-events: auto;
+	pointer-events: auto !important;
 }
 
 .__cxt-ar-annotation__ span {
@@ -36,7 +36,7 @@
 	word-wrap: break-word;
 	white-space: pre-wrap;
 
-	pointer-events: none;
+	pointer-events: none !important;
 	box-sizing: border-box;
 
 	padding: 2%;
@@ -73,7 +73,7 @@
 }
 
 .__cxt-ar-annotation__ svg {
-	pointer-events: all;
+	pointer-events: all !important;
 }
 
 .__cxt-ar-annotation__[data-ar-style="title"] span {
