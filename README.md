@@ -2,7 +2,7 @@
 
 ****annotationlib is intended for other projects looking to support annotations. 
 If you're instead looking to view YouTube annotations again, 
-check out [AnnotationsRestored](https://github.com/afrmtbl/AnnotationsRestored), [AnnotationsReloaded](https://addons.mozilla.org/firefox/addon/annotationsreloaded/), and https://invidio.us.***
+check out [AnnotationsRestored](https://github.com/isaackd/AnnotationsRestored) and https://invidio.us.***
 
 ## Usage
 Start by including `AnnotationRenderer.css` and `AnnotationRenderer.js`
