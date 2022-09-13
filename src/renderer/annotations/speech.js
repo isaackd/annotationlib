@@ -251,10 +251,6 @@ class SpeechAnnotation extends NoteAnnotation {
 			this.textElement.style.width = this.textWidth + "px";
 			this.textElement.style.height = this.textHeight + "px";
 		}
-		// if (this.closeElement && this.closeButtonSize) {
-		// 	this.closeElement.style.left = ((this.textX + this.textWidth) + (this.closeButtonSize / this.closeButtonOffset)) + "px";
-		// 	this.closeElement.style.top = (this.textY + (this.closeButtonSize / this.closeButtonOffset)) + "px";
-		// }
 
 		const pathData = `M${this.baseStartX} ${this.baseStartY} L${this.pointX} ${this.pointY} L${this.baseEndX} ${this.baseEndY} ${commentRectPath}`;
 		this.speechTriangle.setAttribute("d", pathData);
@@ -276,10 +272,14 @@ class SpeechAnnotation extends NoteAnnotation {
 			this.closeElement.lastAnnotation = this;
 			// this.closeElement.style.cursor = "pointer";
 
+			const leftOffset = ((this.textX + this.textWidth) + (this.closeButtonSize / this.closeButtonOffset));
+			const topOffset = (this.textY + (this.closeButtonSize / this.closeButtonOffset));
+
 			const rect = this.element.getBoundingClientRect();
-			const halfSize = this.closeButtonSize / 2;
-			this.closeElement.style.left = rect.right - halfSize + "px";
-			this.closeElement.style.top = rect.top - halfSize + "px";
+
+			this.closeElement.style.left = rect.left + leftOffset + "px";
+			this.closeElement.style.top = rect.top + topOffset + "px";
+
 			this.closeElement.style.display = "block";
 
 			this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, true));
