@@ -159,7 +159,7 @@ class AnnotationRenderer {
 			annotation.element.remove();
 		}
 	}
-	update(videoTime) {
+	update(videoTime: number) {
 		for (const annotation of this.annotations) {
 			if (annotation.closed || annotation.style === "highlightText") continue;
 
@@ -199,7 +199,7 @@ class AnnotationRenderer {
 		}
 	}
 
-	updateAnnotationDimensions(annotations, videoWidth, videoHeight) {
+	updateAnnotationDimensions(annotations: NoteAnnotation[], videoWidth: number, videoHeight: number) {
 		const playerWidth = this.container.getBoundingClientRect().width;
 		const playerHeight = this.container.getBoundingClientRect().height;
 
@@ -244,7 +244,7 @@ class AnnotationRenderer {
 			let verticalPadding = scaledVideoHeight * 0.008;
 			annotation.setPadding(horizontalPadding, verticalPadding);
 
-			if (annotation.style === "speech" && annotation.speechSvg) {
+			if (annotation instanceof SpeechAnnotation) {
 				const asx = this.percentToPixels(playerWidth, ax);
 				const asy = this.percentToPixels(playerHeight, ay);
 				const asw = this.percentToPixels(playerWidth, aw);
@@ -351,5 +351,7 @@ class AnnotationRenderer {
 		return a * b / 100;
 	}
 }
+
+export default AnnotationRenderer;
 
 window.AnnotationRenderer = AnnotationRenderer;
