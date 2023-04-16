@@ -1,4 +1,8 @@
-import { NoteAnnotation, getFinalAnnotationColor } from "./note.js";
+import { getFinalAnnotationColor, NoteAnnotation } from './note.js';
+
+import type { Annotation } from "../../parser";
+
+type PointDirection = "tl" | "tr" | "bl" | "br" | "l" | "r";
 
 /**
  * Creates speech bubble annotations for the renderer to display.
@@ -11,38 +15,56 @@ class SpeechAnnotation extends NoteAnnotation {
 	 * <br>\***Only applies to `bl`, `br`, `tl`, and `tr` point directions**
 	 * @returns {number}
 	 */
-	static get horizontalBaseStartMultiplier() {
+	static get horizontalBaseStartMultiplier(): number {
 		return 0.17379070765180116;
 	}
 	/**
 	 * The triangle's base's ending x multiplier
 	 * <br>Is multiplied by the annotation's width to get the final x position
 	 * <br>\***Only applies to `bl`, `br`, `tl`, and `tr` point directions**
-	 * @returns {number} 
+	 * @returns {number}
 	 */
-	static get horizontalBaseEndMultiplier() {
+	static get horizontalBaseEndMultiplier(): number {
 		return 0.14896346370154384;
 	}
 	/**
 	 * The triangle's base's starting y multiplier
 	 * <br>Is multiplied by the annotation's height to get the final y position
 	 * <br>\***Only applies to `r` and `l` point directions**
-	 * @returns {number} 
+	 * @returns {number}
 	 */
-	static get verticalBaseStartMultiplier() {
+	static get verticalBaseStartMultiplier(): number {
 		return 0.12;
 	}
 	/**
 	 * The triangle's base's ending y multiplier
 	 * <br>Is multiplied by the annotation's height to get the final y position
 	 * <br>\***Only applies to `r` and `l` point directions**
-	 * @returns {number} 
+	 * @returns {number}
 	 */
-	static get verticalBaseEndMultiplier() {
+	static get verticalBaseEndMultiplier(): number {
 		return 0.3;
 	}
 
-	constructor(annotationData, closeElement) {
+	textX: number;
+	textY: number;
+	textWidth: number;
+	textHeight: number;
+
+	baseStartX: number;
+	baseStartY: number;
+	baseEndX: number;
+	baseEndY: number;
+
+	pointX: number;
+	pointY: number;
+
+	directionPadding: number;
+
+	speechSvg: SVGSVGElement;
+	speechTriangle: SVGPathElement;
+
+	constructor(annotationData: Annotation, closeElement: SVGSVGElement) {
 		super(annotationData, closeElement);
 
 		this.createSpeechBubble();
@@ -81,7 +103,7 @@ class SpeechAnnotation extends NoteAnnotation {
 	 * <br>Setting the padding too high will cause the same or a worse problem as without padding
 	 * @returns {"br" | "bl" | "tr" | "tl" | "r" | "l"}
 	 */
-	getPointDirection(x, y, width, height, pointX, pointY, directionPadding = 20) {
+	getPointDirection(x: number, y: number, width: number, height: number, pointX: number, pointY: number, directionPadding: number = 20): PointDirection {
 		if (pointX > ((x + width) - (width / 2)) && pointY > y + height) {
 			return "br";
 		}
@@ -102,7 +124,7 @@ class SpeechAnnotation extends NoteAnnotation {
 		}
 	}
 
-	createSpeechBubble(color = "white") {
+	createSpeechBubble(color = "white"): void{
 		this.speechSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 		this.speechSvg.classList.add("__cxt-ar-annotation-speech-bubble__");
 
@@ -119,17 +141,17 @@ class SpeechAnnotation extends NoteAnnotation {
 		this.speechTriangle.setAttribute("fill", color);
 		this.speechSvg.append(this.speechTriangle);
 
-		const { bgOpacity, bgColor } = this.data;
-		this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, false));
+		const { backgroundOpacity, backgroundColor } = this.data.appearance;
+		this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(backgroundOpacity, backgroundColor, false));
 
 		this.element.prepend(this.speechSvg);
 	}
 
-	updateSpeechBubble(x, y, width, height, pointX, pointY, color = "white", directionPadding = 20) {
-		const hBaseStartMultiplier = this.constructor.horizontalBaseStartMultiplier;
-		const hBaseEndMultiplier = this.constructor.horizontalBaseEndMultiplier;
-		const vBaseStartMultiplier = this.constructor.verticalBaseStartMultiplier;
-		const vBaseEndMultiplier = this.constructor.verticalBaseEndMultiplier;
+	updateSpeechBubble(x: number, y: number, width: number, height: number, pointX: number, pointY: number, color: string = "white", directionPadding: number = 20): void {
+		const hBaseStartMultiplier = SpeechAnnotation.horizontalBaseStartMultiplier;
+		const hBaseEndMultiplier = SpeechAnnotation.horizontalBaseEndMultiplier;
+		const vBaseStartMultiplier = SpeechAnnotation.verticalBaseStartMultiplier;
+		const vBaseEndMultiplier = SpeechAnnotation.verticalBaseEndMultiplier;
 
 		const pointDirection = this.getPointDirection(x, y, width, height, pointX, pointY, this.directionPadding);
 		let commentRectPath = "";
@@ -217,7 +239,7 @@ class SpeechAnnotation extends NoteAnnotation {
 			this.pointX = width + xOffset;
 			this.pointY = pointY - y;
 			commentRectPath = `L${this.baseStartX} ${height} L0 ${height} L0 0 L${this.baseStartX} 0 L${this.baseStartX} ${this.baseStartY}`;
-				
+
 			this.textWidth = width;
 			this.textHeight = height;
 			this.textX = 0;
@@ -238,7 +260,7 @@ class SpeechAnnotation extends NoteAnnotation {
 			this.pointX = 0;
 			this.pointY = pointY - y;
 			commentRectPath = `L${this.baseStartX} ${height} L${width + this.baseStartX} ${height} L${width + this.baseStartX} 0 L${this.baseStartX} 0 L${this.baseStartX} ${this.baseStartY}`;
-			
+
 			this.textWidth = width;
 			this.textHeight = height;
 			this.textX = xOffset;
@@ -256,7 +278,7 @@ class SpeechAnnotation extends NoteAnnotation {
 		this.speechTriangle.setAttribute("d", pathData);
 	}
 
-	updateCloseSize(containerHeight) {
+	updateCloseSize(containerHeight: number): void {
 		const newSize = containerHeight * this.closeButtonScaling;
 		this.closeElement.style.width = newSize + "px";
 		this.closeElement.style.height = newSize + "px";
@@ -264,8 +286,8 @@ class SpeechAnnotation extends NoteAnnotation {
 		this.closeButtonSize = newSize;
 	}
 
-	setupHoverAppearance() {
-		const { bgOpacity, bgColor } = this.data;
+	setupHoverAppearance(): void {
+		const { backgroundOpacity, backgroundColor } = this.data.appearance;
 		this.speechTriangle.addEventListener("mouseover", () => {
 
 			this.closeElement.currentAnnotation = this;
@@ -282,7 +304,7 @@ class SpeechAnnotation extends NoteAnnotation {
 
 			this.closeElement.style.display = "block";
 
-			this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, true));
+			this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(backgroundOpacity, backgroundColor, true));
 		});
 		this.speechTriangle.addEventListener("mouseout", e => {
 			// if (!e.relatedTarget.classList.contains("__cxt-ar-annotation-close__")) {
@@ -296,26 +318,22 @@ class SpeechAnnotation extends NoteAnnotation {
 			setTimeout(() => {
 				if (!this.closeElement.hovered && this.closeElement.currentAnnotation === null) {
 					this.closeElement.style.display = "none";
-					this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, false));
+					this.speechTriangle.setAttribute("fill", getFinalAnnotationColor(backgroundOpacity, backgroundColor, false));
 				}
 			}, 100);
 		});
 
-		if (this.data.actionType === "url") {
+		if (this.data.action.type === "url") {
 			this.element.style.cursor = "pointer";
 		}
 	}
 
-	setPadding(h, v) {
-		h = (h * this.paddingMultiplier) + "px";
-		v = (v * this.paddingMultiplier) + "px";
-		if (this.textElement) this.textElement.style.padding = `${v} ${h} ${v} ${h}`;
+	setPadding(h: number, v: number): void {
+		const horizontal = (h * this.paddingMultiplier) + "px";
+		const vertical = (v * this.paddingMultiplier) + "px";
+		if (this.textElement) this.textElement.style.padding = `${vertical} ${horizontal} ${vertical} ${horizontal}`;
 	}
 
-}
-
-function percentToPixels(a, b) {
-	return a * b / 100;
 }
 
 export default SpeechAnnotation;

@@ -1,14 +1,27 @@
+import type { Annotation } from "../../parser";
+
 class NoteAnnotation {
 	static get defaultAppearanceAttributes() {
 		return {
-			bgColor: 0xFFFFFF,
-			bgOpacity: 0.80,
-			fgColor: 0,
+			backgroundColor: 0xFFFFFF,
+			backgroundOpacity: 0.80,
+			foregroundColor: 0,
 			textSize: 3.15
 		};
 	}
 
-	constructor(annotationData, closeElement) {
+	data: Annotation;
+	closeElement: SVGSVGElement;
+	element: HTMLElement;
+
+	textElement: HTMLElement;
+	textScaling: number;
+	paddingMultiplier: number;
+	closeButtonScaling: number;
+	closeButtonOffset: number;
+	closeButtonSize: number;
+
+	constructor(annotationData: Annotation, closeElement: SVGSVGElement) {
 		if (!annotationData) throw new Error("Annotation data must be provided");
 
 		this.data = annotationData;
@@ -26,7 +39,7 @@ class NoteAnnotation {
 		}
 
 		this.setupAppearance();
-		if (this.data.style !== "speech" && this.data.style !== "title") {
+		if (this.data.style !== "speech") {
 			this.setupHoverAppearance();
 		}
 
@@ -43,43 +56,43 @@ class NoteAnnotation {
 		this.closeButtonScaling = 0.0423;
 		this.closeButtonOffset = -1.8;
 	}
-	setupAppearance() {
-		let appearance = this.constructor.defaultAppearanceAttributes;
-		if (!isNaN(this.data.textSize)) {
-			appearance.textSize = this.data.textSize;
+	setupAppearance(): void {
+		let appearance = NoteAnnotation.defaultAppearanceAttributes;
+		if (!isNaN(this.data.appearance.textSize)) {
+			appearance.textSize = this.data.appearance.textSize;
 		}
-		if (!isNaN(this.data.fgColor)) {
-			appearance.fgColor = this.data.fgColor;
-		}
-
-		if (!isNaN(this.data.bgColor)) {
-			appearance.bgColor = this.data.bgColor;
+		if (!isNaN(this.data.appearance.foregroundColor)) {
+			appearance.foregroundColor = this.data.appearance.foregroundColor;
 		}
 
-		if (!isNaN(this.data.bgOpacity)) {
-			appearance.bgOpacity = this.data.bgOpacity;
+		if (!isNaN(this.data.appearance.backgroundColor)) {
+			appearance.backgroundColor = this.data.appearance.backgroundColor;
 		}
 
-		this.data.bgColor = appearance.bgColor;
-		this.data.bgOpacity = appearance.bgOpacity;
-		this.data.fgColor = appearance.fgColor;
-		this.data.textSize = appearance.textSize;
+		if (!isNaN(this.data.appearance.backgroundOpacity)) {
+			appearance.backgroundOpacity = this.data.appearance.backgroundOpacity;
+		}
 
-		this.element.style.color = "#" + decimalToHex(appearance.fgColor);
+		this.data.appearance.backgroundColor = appearance.backgroundColor;
+		this.data.appearance.backgroundOpacity = appearance.backgroundOpacity;
+		this.data.appearance.foregroundColor = appearance.foregroundColor;
+		this.data.appearance.textSize = appearance.textSize;
+
+		this.element.style.color = "#" + decimalToHex(appearance.foregroundColor);
 	}
 
-	setupHoverAppearance() {
-		const { bgOpacity, bgColor } = this.data;
+	setupHoverAppearance(): void {
+		const { backgroundOpacity, backgroundColor } = this.data.appearance;
 
-		const finalBackgroundColor = getFinalAnnotationColor(bgOpacity, bgColor);
+		const finalBackgroundColor = getFinalAnnotationColor(backgroundOpacity, backgroundColor);
 		this.element.style.backgroundColor = finalBackgroundColor;
 
 		this.element.addEventListener("mouseenter", () => {
-			this.element.style.backgroundColor = getFinalAnnotationColor(bgOpacity, bgColor, true);
+			this.element.style.backgroundColor = getFinalAnnotationColor(backgroundOpacity, backgroundColor, true);
 
 			this.closeElement.currentAnnotation = this;
 			this.closeElement.lastAnnotation = this;
-			
+
 			this.closeElement.style.display = "block";
 
 			const halfSize = this.closeButtonSize / 2;
@@ -89,7 +102,7 @@ class NoteAnnotation {
 			this.closeElement.style.top = rect.top - halfSize + "px";
 		});
 		this.element.addEventListener("mouseleave", () => {
-			this.element.style.backgroundColor = getFinalAnnotationColor(bgOpacity, bgColor, false);
+			this.element.style.backgroundColor = getFinalAnnotationColor(backgroundOpacity, backgroundColor, false);
 			this.closeElement.currentAnnotation = null;
 
 			setTimeout(() => {
@@ -98,12 +111,12 @@ class NoteAnnotation {
 				}
 			}, 100);
 		});
-		if (this.data.actionType === "url") {
+		if (this.data.action.type === "url") {
 			this.element.style.cursor = "pointer";
 		}
 	}
 
-	createCloseElement(strokeWidth = 10) {
+	createCloseElement(strokeWidth: number = 10): SVGSVGElement {
 		const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 		svg.setAttribute("viewBox", "0 0 100 100")
 		svg.classList.add("__cxt-ar-annotation-close__");
@@ -111,14 +124,14 @@ class NoteAnnotation {
 		const path = document.createElementNS(svg.namespaceURI, "path");
 		path.setAttribute("d", "M25 25 L 75 75 M 75 25 L 25 75");
 		path.setAttribute("stroke", "#bbb");
-		path.setAttribute("stroke-width", strokeWidth);
-		path.setAttribute("x", 5);
-		path.setAttribute("y", 5);
+		path.setAttribute("stroke-width", strokeWidth.toString());
+		path.setAttribute("x", "5");
+		path.setAttribute("y", "5");
 
 		const circle = document.createElementNS(svg.namespaceURI, "circle");
-		circle.setAttribute("cx", 50);
-		circle.setAttribute("cy", 50);
-		circle.setAttribute("r", 50);
+		circle.setAttribute("cx", "50");
+		circle.setAttribute("cy", "50");
+		circle.setAttribute("r", "50");
 
 		svg.append(circle, path);
 		return svg;
@@ -131,13 +144,13 @@ class NoteAnnotation {
 		this.element.setAttribute("hidden", "");
 	}
 
-	updateTextSize(containerHeight) {
-		if (this.data.textSize) {
-			const newTextSize = (this.data.textSize / this.textScaling) * containerHeight;
+	updateTextSize(containerHeight: number): void {
+		if (this.data.appearance.textSize) {
+			const newTextSize = (this.data.appearance.textSize / this.textScaling) * containerHeight;
 			this.fontSize = `${newTextSize}px`;
 		}
 	}
-	updateCloseSize(containerHeight) {
+	updateCloseSize(containerHeight: number): void {
 		const newSize = containerHeight * this.closeButtonScaling;
 		this.closeElement.style.width = newSize + "px";
 		this.closeElement.style.height = newSize + "px";
@@ -148,59 +161,59 @@ class NoteAnnotation {
 		this.closeButtonSize = newSize;
 	}
 
-	setDimensions(x, y, width, height) {
+	setDimensions(x: string, y: string, width: string, height: string) {
 		this.left = x;
 		this.top = y;
 		this.width = width;
 		this.height = height;
 	}
-	setPadding(h, v) {
+	setPadding(h: number, v: number) {
 		h = (h * this.paddingMultiplier) + "px";
 		v = (v * this.paddingMultiplier) + "px";
 		this.element.style.padding = `${v} ${h} ${v} ${h}`;
 	}
 
-	get closed() {
+	get closed(): boolean {
 		return this.element.hasAttribute("data-ar-closed");
 	}
-	get hidden() {
+	get hidden(): boolean {
 		return this.element.hasAttribute("hidden");
 	}
 
-	get type() {
+	get type(): Annotation["type"] {
 		return this.data.type;
 	}
-	get style() {
+	get style(): Annotation["style"] {
 		return this.data.style;
 	}
 
-	set left(val) {
+	set left(val: string) {
 		this.element.style.left = val;
 	}
-	set top(val) {
+	set top(val: string) {
 		this.element.style.top = val;
 	}
-	set width(val) {
+	set width(val: string) {
 		this.element.style.width = val;
 	}
-	set height(val) {
+	set height(val: string) {
 		this.element.style.height = val;
 	}
 
-	set fontSize(val) {
+	set fontSize(val: string) {
 		this.element.style.fontSize = val;
 	}
 }
 // https://stackoverflow.com/a/3689638/10817894
-function decimalToHex(dec) {
+function decimalToHex(dec: number): string {
 	let hex = dec.toString(16);
-	hex = "000000".substr(0, 6 - hex.length) + hex; 
+	hex = "000000".substr(0, 6 - hex.length) + hex;
 	return hex;
 }
-function getFinalAnnotationColor(bgOpacity, bgColor, hover = false, hoverOpacity = 0xE6) {
+function getFinalAnnotationColor(bgOpacity: number, bgColor: number, hover: boolean = false, hoverOpacity: number = 0xE6): string {
 	if (!isNaN(bgOpacity) && !isNaN(bgColor)) {
-		const alphaHex = hover 
-			? (hoverOpacity).toString(16) 
+		const alphaHex = hover
+			? (hoverOpacity).toString(16)
 			: Math.floor((bgOpacity * 255)).toString(16);
 
 		const bgColorHex = decimalToHex(bgColor);

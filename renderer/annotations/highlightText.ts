@@ -1,9 +1,11 @@
-import { NoteAnnotation } from "./note.js";
+import { NoteAnnotation } from './note.js';
+
+import type { Annotation } from "../../parser";
 
 class HighlightTextAnnotation extends NoteAnnotation {
-	constructor(annotationData, closeElement, parentAnnotation) {
-		annotationData.x += parentAnnotation.data.x;
-		annotationData.y += parentAnnotation.data.y;
+	constructor(annotationData: Annotation, closeElement: SVGSVGElement, parentAnnotation: Annotation) {
+		annotationData.x += parentAnnotation.x;
+		annotationData.y += parentAnnotation.y;
 		super(annotationData, closeElement);
 
 		this.element.style.backgroundColor = "";
@@ -21,7 +23,7 @@ class HighlightTextAnnotation extends NoteAnnotation {
 		this.closeElement.style.cursor = "default";
 	}
 
-	setupHoverAppearance() {
+	setupHoverAppearance(): void {
 		// Removed default hover appearance by overriding and doing nothing
 	}
 }

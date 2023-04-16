@@ -1,11 +1,30 @@
-import { NoteAnnotation, getFinalAnnotationColor }  from "./annotations/note.js";
-import SpeechAnnotation from "./annotations/speech.js";
-import HighlightAnnotation from "./annotations/highlight.js";
-import HighlightTextAnnotation from "./annotations/highlightText.js";
+import HighlightAnnotation from './annotations/highlight.js';
+import HighlightTextAnnotation from './annotations/highlightText.js';
+import { getFinalAnnotationColor, NoteAnnotation } from './annotations/note.js';
+import SpeechAnnotation from './annotations/speech.js';
+
+import type { Annotation } from "../parser";
+
+interface PlayerOptions {
+	getVideoTime: () => number;
+	seekTo: (seconds: number) => void;
+	getOriginalVideoWidth: () => number;
+	getOriginalVideoHeight: () => number;
+}
 
 class AnnotationRenderer {
 
-	constructor(annotations, container, playerOptions, updateInterval = 200) {
+	annotations: NoteAnnotation[];
+	playerOptions: PlayerOptions;
+
+	container: HTMLElement;
+	annotationsContainer: HTMLElement;
+	closeElement: SVGSVGElement;
+
+	updateInterval: number;
+	updateIntervalId: number;
+
+	constructor(annotations: Annotation[], container: HTMLElement, playerOptions: PlayerOptions, updateInterval: number = 200) {
 		if (!annotations) throw new Error("Annotation objects must be provided");
 		if (!container) throw new Error("An element to contain the annotations must be provided");
 
@@ -46,9 +65,9 @@ class AnnotationRenderer {
 			this.closeElement.style.display = "none";
 
 			if (lastAnnotation && lastAnnotation.speechTriangle) {
-				const { bgOpacity, bgColor } = lastAnnotation.data;		
+				const { backgroundOpacity, backgroundColor } = lastAnnotation.data.appearance;
 				lastAnnotation.speechTriangle.style.cursor = "default";
-				lastAnnotation.speechTriangle.setAttribute("fill", getFinalAnnotationColor(bgOpacity, bgColor, false));
+				lastAnnotation.speechTriangle.setAttribute("fill", getFinalAnnotationColor(backgroundOpacity, backgroundColor, false));
 			}
 
 			this.closeElement.hovered = false;
@@ -69,20 +88,19 @@ class AnnotationRenderer {
 		this.updateInterval = updateInterval;
 		this.updateIntervalId = null;
 	}
-	changeAnnotationData(annotations) {
+	changeAnnotationData(annotations: Annotation[]) {
 		this.stop();
 		this.removeAnnotationElements();
-		this.annotations = annotations;
-		this.createAnnotationElements();
+		this.createAnnotationElements(annotations);
 		this.start();
 	}
-	createAnnotationElements(annotationsData) {
+	createAnnotationElements(annotationsData: Annotation[]) {
 
-		const highlightAnnotations = {};
-		const highlightTextAnnotations = {};
+		const highlightAnnotations: Map<string, Annotation> = new Map();
+		const highlightTextAnnotations: Map<string, Annotation> = new Map();
 
 		for (const data of annotationsData) {
-			let annotation;
+			let annotation: NoteAnnotation;
 			if (data.style === "speech") {
 				annotation = new SpeechAnnotation(data, this.closeElement);
 			}
@@ -91,7 +109,7 @@ class AnnotationRenderer {
 				highlightAnnotations[data.id] = annotation;
 			}
 			else if (data.style === "highlightText") {
-				highlightTextAnnotations[data.highlightId] = data;
+				highlightTextAnnotations.set(data.highlightId, data);
 			}
 			else {
 				annotation = new NoteAnnotation(data, this.closeElement);
@@ -105,9 +123,9 @@ class AnnotationRenderer {
 
 		for (const highlightId in highlightAnnotations) {
 			const highlightTextData = highlightTextAnnotations[highlightId];
-			
+
 			if (highlightTextData) {
-				const parent = highlightAnnotations[highlightId];
+				const parent = highlightAnnotations.get(highlightId);
 				const annotation = new HighlightTextAnnotation(highlightTextData, this.closeElement, parent);
 
 				this.annotations.push(annotation);
@@ -116,7 +134,7 @@ class AnnotationRenderer {
 		}
 
 	}
-	createCloseElement() {
+	createCloseElement(): SVGSVGElement {
 		const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 		svg.setAttribute("viewBox", "0 0 100 100")
 		svg.classList.add("__cxt-ar-annotation-close__");
@@ -124,19 +142,19 @@ class AnnotationRenderer {
 		const path = document.createElementNS(svg.namespaceURI, "path");
 		path.setAttribute("d", "M25 25 L 75 75 M 75 25 L 25 75");
 		path.setAttribute("stroke", "#bbb");
-		path.setAttribute("stroke-width", 10)
-		path.setAttribute("x", 5);
-		path.setAttribute("y", 5);
+		path.setAttribute("stroke-width", "10")
+		path.setAttribute("x", "5");
+		path.setAttribute("y", "5");
 
 		const circle = document.createElementNS(svg.namespaceURI, "circle");
-		circle.setAttribute("cx", 50);
-		circle.setAttribute("cy", 50);
-		circle.setAttribute("r", 50);
+		circle.setAttribute("cx", "50");
+		circle.setAttribute("cy", "50");
+		circle.setAttribute("r", "50");
 
 		svg.append(circle, path);
 		return svg;
 	}
-	removeAnnotationElements() {
+	removeAnnotationElements(): void {
 		for (const annotation of this.annotations) {
 			annotation.element.remove();
 		}
@@ -270,13 +288,13 @@ class AnnotationRenderer {
 		if (!annotationElement.matches(".__cxt-ar-annotation__") && !annotationElement.closest(".__cxt-ar-annotation-close__")) {
 			annotationElement = annotationElement.closest(".__cxt-ar-annotation__");
 			if (!annotationElement) return null;
-		} 
-		let annotationData = annotationElement.__annotationData;
+		}
+		let annotationData = annotationElement.__annotationData as Annotation;
 
 		if (!annotationElement || !annotationData) return;
 
-		if (annotationData.actionType === "time") {
-			const seconds = annotationData.actionSeconds;
+		if (annotationData.action.type === "time") {
+			const seconds = annotationData.action.seconds;
 			if (this.playerOptions) {
 				this.playerOptions.seekTo(seconds);
 				const videoTime = this.playerOptions.getVideoTime();
@@ -284,10 +302,10 @@ class AnnotationRenderer {
 			}
 			window.dispatchEvent(new CustomEvent("__ar_seek_to", {detail: {seconds}}));
 		}
-		else if (annotationData.actionType === "url") {
+		else if (annotationData.action.type === "url") {
 			const data = {
-				url: annotationData.actionUrl,
-				target: annotationData.actionUrlTarget || "current"
+				url: annotationData.action.url,
+				target: annotationData.action.target || "current"
 			};
 
 			const timeHash = this.extractTimeHash(new URL(data.url));
@@ -298,38 +316,38 @@ class AnnotationRenderer {
 		}
 	}
 
-	setUpdateInterval(ms) {
+	setUpdateInterval(ms: number): void {
 		this.updateInterval = ms;
 		this.stop();
 		this.start();
 	}
-	extractTimeHash(url) {
+	extractTimeHash(url: URL): { seconds: number } | boolean {
 		if (!url) throw new Error("A URL must be provided");
 		const hash = url.hash;
 
 		if (hash && hash.startsWith("#t=")) {
 			const timeString = url.hash.split("#t=")[1];
 			const seconds = this.timeStringToSeconds(timeString);
-			return {seconds};
+			return { seconds };
 		}
 		else {
 			return false;
 		}
 	}
-	timeStringToSeconds(time) {
+	timeStringToSeconds(time: string): number {
 		let seconds = 0;
 
 		const h = time.split("h");
 	  	const m = (h[1] || time).split("m");
 	  	const s = (m[1] || time).split("s");
-		  
+
 	  	if (h[0] && h.length === 2) seconds += parseInt(h[0], 10) * 60 * 60;
 	  	if (m[0] && m.length === 2) seconds += parseInt(m[0], 10) * 60;
 	  	if (s[0] && s.length === 2) seconds += parseInt(s[0], 10);
 
 		return seconds;
 	}
-	percentToPixels(a, b) {
+	percentToPixels(a: number, b: number): number {
 		return a * b / 100;
 	}
 }

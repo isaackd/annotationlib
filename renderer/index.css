@@ -9,7 +9,7 @@
 	top: 0px;
 	left: 0px;
 
-	pointer-events: none !important;
+	pointer-events: none;
 	overflow: hidden;
 }
 
@@ -25,7 +25,7 @@
 }
 
 .__cxt-ar-annotation__ {
-	pointer-events: auto !important;
+	pointer-events: auto;
 }
 
 .__cxt-ar-annotation__ span {
@@ -36,7 +36,7 @@
 	word-wrap: break-word;
 	white-space: pre-wrap;
 
-	pointer-events: none !important;
+	pointer-events: none;
 	box-sizing: border-box;
 
 	padding: 2%;
@@ -51,10 +51,10 @@
 	display: none;
 	position: absolute;
 
-	cursor: pointer !important;
+	cursor: pointer;
 
 	/* place the close button above the speech bubble svg */
-	z-index: 999;
+	z-index: 1;
 }
 /*.__cxt-ar-annotation__:hover:not([hidden]):not([data-ar-closed]) .__cxt-ar-annotation-close__ {
 	display: block;
@@ -73,7 +73,7 @@
 }
 
 .__cxt-ar-annotation__ svg {
-	pointer-events: all !important;
+	pointer-events: all;
 }
 
 .__cxt-ar-annotation__[data-ar-style="title"] span {

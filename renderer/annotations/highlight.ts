@@ -1,23 +1,26 @@
-import { NoteAnnotation, getFinalAnnotationColor } from "./note.js";
+import type { Annotation } from '../../parser';
+import { getFinalAnnotationColor, NoteAnnotation } from './note.js';
 
 class HighlightAnnotation extends NoteAnnotation {
-	constructor(annotationData, closeElement) {
+
+	constructor(annotationData: Annotation, closeElement: SVGSVGElement) {
 		super(annotationData, closeElement);
 
-		const { bgOpacity } = this.data;
+		const { backgroundOpacity } = this.data.appearance;
 
 		this.element.style.backgroundColor = "";
-		this.element.style.border = `2.5px solid ${getFinalAnnotationColor(bgOpacity, 8748933, false)}`;
+		this.element.style.border = `2.5px solid ${getFinalAnnotationColor(backgroundOpacity, 8748933, false)}`;
 	}
 
 	setupHoverAppearance() {
-		const { bgOpacity, bgColor, actionType } = this.data;
+		const { backgroundOpacity, backgroundColor } = this.data.appearance;
+		const actionType = this.data.action.type;
 
 		this.element.addEventListener("mouseenter", () => {
 			this.closeElement.currentAnnotation = this;
 			this.closeElement.lastAnnotation = this;
-			
-			this.element.style.border = `2.5px solid ${getFinalAnnotationColor(bgOpacity, bgColor, true)}`;
+
+			this.element.style.border = `2.5px solid ${getFinalAnnotationColor(backgroundOpacity, backgroundColor, true)}`;
 			this.closeElement.style.display = "block";
 
 			const halfSize = this.closeButtonSize / 2;
@@ -27,7 +30,7 @@ class HighlightAnnotation extends NoteAnnotation {
 			this.closeElement.style.top = rect.top - halfSize + "px";
 		});
 		this.element.addEventListener("mouseleave", () => {
-			this.element.style.border = `2.5px solid ${getFinalAnnotationColor(bgOpacity, 8748933, false)}`;
+			this.element.style.border = `2.5px solid ${getFinalAnnotationColor(backgroundOpacity, 8748933, false)}`;
 			this.closeElement.currentAnnotation = null;
 
 			setTimeout(() => {
