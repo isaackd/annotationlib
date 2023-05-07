@@ -24,8 +24,8 @@ class AnnotationRenderer {
 	updateInterval: number;
 	updateIntervalId: number;
 
-	constructor(annotations: Annotation[], container: HTMLElement, playerOptions: PlayerOptions, updateInterval: number = 200) {
-		if (!annotations) throw new Error("Annotation objects must be provided");
+	constructor(annotationsData: Annotation[], container: HTMLElement, playerOptions: PlayerOptions, updateInterval: number = 200) {
+		if (!annotationsData) throw new Error("Annotation objects must be provided");
 		if (!container) throw new Error("An element to contain the annotations must be provided");
 
 		if (playerOptions && playerOptions.getVideoTime && playerOptions.seekTo) {
@@ -77,7 +77,7 @@ class AnnotationRenderer {
 
 		this.container.prepend(this.annotationsContainer);
 
-		this.createAnnotationElements(annotations);
+		this.createAnnotationElements(annotationsData);
 
 		// in case the dom already loaded
 		this.updateAllAnnotationSizes();
@@ -88,13 +88,22 @@ class AnnotationRenderer {
 		this.updateInterval = updateInterval;
 		this.updateIntervalId = null;
 	}
-	changeAnnotationData(annotations: Annotation[]) {
+	/**
+	 * Change the annotations that are rendered.
+	 * @param annotations List of Annotation objects the elements will be based on
+	 */
+	changeAnnotationData(annotationsData: Annotation[]) {
 		this.stop();
 		this.removeAnnotationElements();
-		this.createAnnotationElements(annotations);
+		this.createAnnotationElements(annotationsData);
+		this.updateAllAnnotationSizes();
 		this.start();
 	}
-	createAnnotationElements(annotationsData: Annotation[]) {
+	/**
+	 * Turn the annotation data into elements to be rendered.
+	 * @param annotationsData List of Annotation objects the elements will be based on
+	 */
+	private createAnnotationElements(annotationsData: Annotation[]) {
 
 		const highlightAnnotations: Map<string, Annotation> = new Map();
 		const highlightTextAnnotations: Map<string, Annotation> = new Map();
@@ -133,8 +142,10 @@ class AnnotationRenderer {
 			}
 		}
 
+		console.log(this.annotations);
+
 	}
-	createCloseElement(): SVGSVGElement {
+	private createCloseElement(): SVGSVGElement {
 		const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
 		svg.setAttribute("viewBox", "0 0 100 100")
 		svg.classList.add("__cxt-ar-annotation-close__");
@@ -154,14 +165,24 @@ class AnnotationRenderer {
 		svg.append(circle, path);
 		return svg;
 	}
+	/**
+	 * Removes every annotation from the list of annotation elements to be rendered.
+	 */
 	removeAnnotationElements(): void {
 		for (const annotation of this.annotations) {
 			annotation.element.remove();
 		}
+		this.annotations = [];
 	}
-	update(videoTime: number) {
+	/**
+	 * Goes through each annotation, displaying them while videoTime is between its start and end time.
+	 * @param videoTime
+	 */
+	update(videoTime: number): void {
 		for (const annotation of this.annotations) {
-			if (annotation.closed || annotation.style === "highlightText") continue;
+			if (annotation.closed || annotation.style === "highlightText") {
+				continue
+			}
 
 			const start = annotation.data.timeStart;
 			const end = annotation.data.timeEnd;
@@ -174,7 +195,10 @@ class AnnotationRenderer {
 			}
 		}
 	}
-	start() {
+	/**
+	 * Starts showing annotations.
+	 */
+	start(): void {
 		if (!this.playerOptions) throw new Error("playerOptions must be provided to use the start method");
 
 		const videoTime = this.playerOptions.getVideoTime();
@@ -187,7 +211,10 @@ class AnnotationRenderer {
 			}, this.updateInterval);
 		}
 	}
-	stop() {
+	/**
+	 * Stops the display of annotations.
+	 */
+	stop(): void {
 		if (!this.playerOptions) throw new Error("playerOptions must be provided to use the stop method");
 
 		const videoTime = this.playerOptions.getVideoTime();
@@ -198,8 +225,14 @@ class AnnotationRenderer {
 			window.dispatchEvent(new CustomEvent("__ar_renderer_stop"));
 		}
 	}
-
-	updateAnnotationDimensions(annotations: NoteAnnotation[], videoWidth: number, videoHeight: number) {
+	/**
+	 * Updates the size of each annotation.
+	 * This is useful when the video size changes and the annotation need to be resizes accordingly.
+	 * @param annotations The annotation elements
+	 * @param videoWidth The width of the video
+	 * @param videoHeight The height of the video
+	 */
+	updateAnnotationDimensions(annotations: NoteAnnotation[], videoWidth: number, videoHeight: number): void {
 		const playerWidth = this.container.getBoundingClientRect().width;
 		const playerHeight = this.container.getBoundingClientRect().height;
 
@@ -264,7 +297,7 @@ class AnnotationRenderer {
 		}
 	}
 
-	updateAllAnnotationSizes() {
+	updateAllAnnotationSizes(): void {
 		if (this.playerOptions && this.playerOptions.getOriginalVideoWidth && this.playerOptions.getOriginalVideoHeight) {
 			const videoWidth = this.playerOptions.getOriginalVideoWidth();
 			const videoHeight = this.playerOptions.getOriginalVideoHeight();
@@ -276,13 +309,15 @@ class AnnotationRenderer {
 			this.updateAnnotationDimensions(this.annotations, playerWidth, playerHeight);
 		}
 	}
-
-	hideAll() {
+	/**
+	 * Hides every annotation, even if it should be displayed based on the current video time.
+	 */
+	hideAll(): void {
 		for (const annotation of this.annotations) {
 			annotation.hide();
 		}
 	}
-	annotationClickHandler(e) {
+	private annotationClickHandler(e) {
 		let annotationElement = e.target;
 		// if we click on annotation text instead of the actual annotation element
 		if (!annotationElement.matches(".__cxt-ar-annotation__") && !annotationElement.closest(".__cxt-ar-annotation-close__")) {
@@ -316,12 +351,16 @@ class AnnotationRenderer {
 		}
 	}
 
+	/**
+	 * Specify how often to check if annotations should be hidden or displayed.
+	 * @param ms
+	 */
 	setUpdateInterval(ms: number): void {
 		this.updateInterval = ms;
 		this.stop();
 		this.start();
 	}
-	extractTimeHash(url: URL): { seconds: number } | boolean {
+	private extractTimeHash(url: URL): { seconds: number } | boolean {
 		if (!url) throw new Error("A URL must be provided");
 		const hash = url.hash;
 
@@ -334,7 +373,7 @@ class AnnotationRenderer {
 			return false;
 		}
 	}
-	timeStringToSeconds(time: string): number {
+	private timeStringToSeconds(time: string): number {
 		let seconds = 0;
 
 		const h = time.split("h");
@@ -347,7 +386,7 @@ class AnnotationRenderer {
 
 		return seconds;
 	}
-	percentToPixels(a: number, b: number): number {
+	private percentToPixels(a: number, b: number): number {
 		return a * b / 100;
 	}
 }
