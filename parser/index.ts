@@ -38,7 +38,7 @@ interface AnnotationActionTimestamp {
 }
 
 const AnnotationTypesArr = ["text",  "highlight",  "pause",  "branding"] as const;
-const AnnotationStylesArr = ["popup", "speech", "highlightText", "anchored", "branding", "label"] as const;
+const AnnotationStylesArr = ["popup", "speech", "highlightText", "anchored", "branding", "label", "title"] as const;
 
 export type AnnotationType = typeof AnnotationTypesArr[number];
 export type AnnotationStyle = typeof AnnotationStylesArr[number];
