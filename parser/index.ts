@@ -316,15 +316,12 @@ function getActionFromBase(base: Element): AnnotationAction | void {
 
 	const actionUrlTarget = urlElement.getAttribute("target");
 	const href = urlElement.getAttribute("value");
-	// only allow links to youtube
-	// can be changed in the future
-	if (href.startsWith("https://www.youtube.com/")) {
-		const url = new URL(href);
-		const srcVid = url.searchParams.get("src_vid");
-		const toVid = url.searchParams.get("v");
 
-		return linkOrTimestamp(url, srcVid, toVid, actionUrlTarget);
-	}
+	const url = new URL(href);
+	const srcVid = url.searchParams.get("src_vid");
+	const toVid = url.searchParams.get("v");
+
+	return linkOrTimestamp(url, srcVid, toVid, actionUrlTarget);
 }
 
 function linkOrTimestamp(url: URL, srcVid: string, toVid: string, actionUrlTarget: string): AnnotationAction {
