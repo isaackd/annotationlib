@@ -5,6 +5,8 @@ import SpeechAnnotation from './annotations/speech.js';
 
 import type { Annotation } from "../parser";
 
+import "./index.css";
+
 interface PlayerOptions {
 	getVideoTime: () => number;
 	seekTo: (seconds: number) => void;
