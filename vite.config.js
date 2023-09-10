@@ -3,6 +3,12 @@ import { resolve } from "path";
 import cssInjectedByJsPlugin from "vite-plugin-css-injected-by-js";
 
 export default defineConfig({
+    test: {
+        browser: {
+            enabled: true,
+            name: "chrome", // browser name is required
+        },
+    },
     build: {
         minify: true,
         lib: {
@@ -11,7 +17,10 @@ export default defineConfig({
                 renderer: "renderer/index.ts",
             },
             formats: ["es"]
-        }
+        },
+    },
+    esbuild: {
+        minifyIdentifiers: false
     },
     plugins: [
         cssInjectedByJsPlugin({
