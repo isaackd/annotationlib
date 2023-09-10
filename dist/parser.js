@@ -1,125 +1,131 @@
-const g = ["text", "highlight", "pause", "branding"], p = ["popup", "speech", "highlightText", "anchored", "branding", "label", "title"];
-function m(e) {
-  return g.includes(e);
+const AnnotationTypesArr = ["text", "highlight", "pause", "branding"], AnnotationStylesArr = ["popup", "speech", "highlightText", "anchored", "branding", "label", "title"];
+function isAnnotationType(value) {
+  return AnnotationTypesArr.includes(value);
 }
-function f(e) {
-  return p.includes(e);
+function isAnnotationStyle(value) {
+  return AnnotationStylesArr.includes(value);
 }
-function h(e) {
-  return new DOMParser().parseFromString(e, "application/xml");
+function xmlToDom(xml) {
+  return new DOMParser().parseFromString(xml, "application/xml");
 }
-function B(e) {
-  const n = h(e).getElementsByTagName("annotation");
-  return y(n);
+function parseFromXml(xml) {
+  const annotations = xmlToDom(xml).getElementsByTagName("annotation");
+  return parseAnnotationList(annotations);
 }
-function y(e) {
-  const t = [];
-  for (const n of e) {
-    const r = d(n);
-    r && t.push(r);
+function parseAnnotationList(annotationElements) {
+  const annotations = [];
+  for (const el of annotationElements) {
+    const parsedAnnotation = parseAnnotation(el);
+    parsedAnnotation && annotations.push(parsedAnnotation);
   }
-  return t;
+  return annotations;
 }
-function d(e) {
-  const t = e, n = b(t);
-  if (!n.type || n.type === "pause")
+function parseAnnotation(annotationElement) {
+  const base = annotationElement, attributes = getAttributesFromBase(base);
+  if (!attributes.type || attributes.type === "pause")
     return null;
-  const r = x(t), s = T(t), o = A(t);
-  if (!o)
+  const text = getTextFromBase(base), action = getActionFromBase(base), backgroundShape = getBackgroundShapeFromBase(base);
+  if (!backgroundShape)
     return null;
-  const { timeStart: i, timeEnd: a } = o;
-  if (isNaN(i) || isNaN(a) || i === null || a === null)
+  const { timeStart, timeEnd } = backgroundShape;
+  if (isNaN(timeStart) || isNaN(timeEnd) || timeStart === null || timeEnd === null)
     return null;
-  const c = w(t);
-  let l = {
-    id: n.id,
-    type: n.type,
-    x: o.x,
-    y: o.y,
-    width: o.width,
-    height: o.height,
-    timeStart: i,
-    timeEnd: a
+  const appearance = getAppearanceFromBase(base);
+  let annotation = {
+    id: attributes.id,
+    type: attributes.type,
+    x: backgroundShape.x,
+    y: backgroundShape.y,
+    width: backgroundShape.width,
+    height: backgroundShape.height,
+    timeStart,
+    timeEnd
   };
-  return n.style && (l.style = n.style), r && (l.text = r), s && (l.action = s), c && (l.appearance = c), o.hasOwnProperty("sx") && (l.sx = o.sx), o.hasOwnProperty("sy") && (l.sy = o.sy), l;
+  return attributes.style && (annotation.style = attributes.style), text && (annotation.text = text), action && (annotation.action = action), appearance && (annotation.appearance = appearance), backgroundShape.hasOwnProperty("sx") && (annotation.sx = backgroundShape.sx), backgroundShape.hasOwnProperty("sy") && (annotation.sy = backgroundShape.sy), annotation;
 }
-function A(e) {
-  const t = e.getElementsByTagName("movingRegion")[0];
-  if (!t)
+function getBackgroundShapeFromBase(base) {
+  const movingRegion = base.getElementsByTagName("movingRegion")[0];
+  if (!movingRegion)
     return null;
-  const n = t.getAttribute("type"), r = t.getElementsByTagName(`${n}Region`), { timeStart: s, timeEnd: o } = F(r), i = {
-    x: parseFloat(r[0].getAttribute("x")),
-    y: parseFloat(r[0].getAttribute("y")),
-    width: parseFloat(r[0].getAttribute("w")),
-    height: parseFloat(r[0].getAttribute("h")),
-    timeStart: s,
-    timeEnd: o
-  }, a = r[0].getAttribute("sx"), c = r[0].getAttribute("sy");
-  return a && (i.sx = parseFloat(a)), c && (i.sy = parseFloat(c)), i;
+  const regionType = movingRegion.getAttribute("type"), regions = movingRegion.getElementsByTagName(`${regionType}Region`), { timeStart, timeEnd } = extractRegionTime(regions), rect = {};
+  for (const attr of ["x", "y", "w", "h"]) {
+    const val = regions[0].getAttribute(attr);
+    if (!val)
+      throw new Error(`Required attribute "${attr}" is null`);
+    rect[attr] = parseFloat(val);
+  }
+  const shape = {
+    x: rect.x,
+    y: rect.y,
+    width: rect.w,
+    height: rect.h,
+    timeStart,
+    timeEnd
+  }, sx = regions[0].getAttribute("sx"), sy = regions[0].getAttribute("sy");
+  return sx && (shape.sx = parseFloat(sx)), sy && (shape.sy = parseFloat(sy)), shape;
 }
-function b(e) {
-  const t = e.getAttribute("id"), n = e.getAttribute("type"), r = e.getAttribute("style");
-  if (!m(n))
+function getAttributesFromBase(base) {
+  const id = base.getAttribute("id"), type = base.getAttribute("type"), style = base.getAttribute("style");
+  if (!id)
+    throw new Error('Missing "id" attribute in base');
+  if (!type)
+    throw new Error('Missing "type" attribute in base');
+  if (!isAnnotationType(type))
     throw new Error("Invalid value in attribute element: type");
-  if (!f(r))
-    throw new Error("Invalid value in attribute element: style");
-  return { id: t, type: n, style: r };
+  return { id, type, style };
 }
-function x(e) {
-  const t = e.getElementsByTagName("TEXT")[0];
-  return t ? t.textContent : null;
+function getTextFromBase(base) {
+  const textElement = base.getElementsByTagName("TEXT")[0];
+  return textElement ? textElement.textContent : null;
 }
-function T(e) {
-  const t = e.getElementsByTagName("action")[0];
-  if (!t)
+function getActionFromBase(base) {
+  const actionElement = base.getElementsByTagName("action")[0];
+  if (!actionElement)
     return null;
-  const n = t.getElementsByTagName("url")[0];
-  if (!n)
+  const urlElement = actionElement.getElementsByTagName("url")[0];
+  if (!urlElement)
     return null;
-  const r = n.getAttribute("target"), s = n.getAttribute("value");
-  if (s.startsWith("https://www.youtube.com/")) {
-    const o = new URL(s), i = o.searchParams.get("src_vid"), a = o.searchParams.get("v");
-    return E(o, i, a, r);
-  }
+  const actionUrlTarget = urlElement.getAttribute("target"), href = urlElement.getAttribute("value"), url = new URL(href), srcVid = url.searchParams.get("src_vid"), toVid = url.searchParams.get("v");
+  return linkOrTimestamp(url, srcVid, toVid, actionUrlTarget);
 }
-function E(e, t, n, r) {
-  if (t && n && t === n) {
-    let s = 0;
-    const o = e.hash;
-    if (o && o.startsWith("#t=")) {
-      const i = e.hash.split("#t=")[1];
-      s = S(i);
+function linkOrTimestamp(url, srcVid, toVid, actionUrlTarget) {
+  if (srcVid && toVid && srcVid === toVid) {
+    let seconds = 0;
+    const hash = url.hash;
+    if (hash && hash.startsWith("#t=")) {
+      const timeString = url.hash.split("#t=")[1];
+      seconds = timeStringToSeconds(timeString);
     }
-    return { type: "time", seconds: s };
+    return { type: "time", seconds };
   } else
-    return { type: "url", url: e.href, target: r };
+    return { type: "url", url: url.href, target: actionUrlTarget };
 }
-function w(e) {
-  const t = e.getElementsByTagName("appearance")[0];
-  if (t) {
-    const n = t.getAttribute("bgAlpha"), r = t.getAttribute("bgColor"), s = t.getAttribute("fgColor"), o = t.getAttribute("textSize"), i = {};
-    return n && (i.backgroundOpacity = parseFloat(n)), r && (i.backgroundColor = parseInt(r, 10)), s && (i.foregroundColor = parseInt(s, 10)), o && (i.textSize = parseFloat(o)), i;
+function getAppearanceFromBase(base) {
+  const appearanceElement = base.getElementsByTagName("appearance")[0];
+  if (appearanceElement) {
+    const bgOpacity = appearanceElement.getAttribute("bgAlpha"), bgColor = appearanceElement.getAttribute("bgColor"), fgColor = appearanceElement.getAttribute("fgColor"), textSize = appearanceElement.getAttribute("textSize"), styles = {};
+    return bgOpacity && (styles.backgroundOpacity = parseFloat(bgOpacity)), bgColor && (styles.backgroundColor = parseInt(bgColor, 10)), fgColor && (styles.foregroundColor = parseInt(fgColor, 10)), textSize && (styles.textSize = parseFloat(textSize)), styles;
   }
 }
-function F(e) {
-  const t = e[0].getAttribute("t"), n = u(t), r = e[e.length - 1].getAttribute("t"), s = u(r);
-  return { timeStart: n, timeEnd: s };
+function extractRegionTime(regions) {
+  const timeStartAttr = regions[0].getAttribute("t"), timeStart = hmsToSeconds(timeStartAttr), timeEndAttr = regions[regions.length - 1].getAttribute("t"), timeEnd = hmsToSeconds(timeEndAttr);
+  return { timeStart, timeEnd };
 }
-function u(e) {
-  let t = e.split(":"), n = 0, r = 1;
-  for (; t.length > 0; )
-    n += r * parseFloat(t.pop()), r *= 60;
-  return n;
+function hmsToSeconds(hms) {
+  let split = hms.split(":"), seconds = 0, minutes = 1;
+  for (; split.length > 0; )
+    seconds += minutes * parseFloat(split.pop()), minutes *= 60;
+  return seconds;
 }
-function S(e) {
-  let t = 0;
-  const n = e.split("h"), r = (n[1] || e).split("m"), s = (r[1] || e).split("s");
-  return n[0] && n.length === 2 && (t += parseInt(n[0], 10) * 60 * 60), r[0] && r.length === 2 && (t += parseInt(r[0], 10) * 60), s[0] && s.length === 2 && (t += parseInt(s[0], 10)), t;
+function timeStringToSeconds(time) {
+  let result = 0;
+  const hours = time.split("h"), minutes = (hours[1] || time).split("m"), seconds = (minutes[1] || time).split("s");
+  return hours[0] && hours.length === 2 && (result += parseInt(hours[0], 10) * 60 * 60), minutes[0] && minutes.length === 2 && (result += parseInt(minutes[0], 10) * 60), seconds[0] && seconds.length === 2 && (result += parseInt(seconds[0], 10)), result;
 }
 export {
-  f as isAnnotationStyle,
-  m as isAnnotationType,
-  d as parseAnnotation,
-  y as parseAnnotationList,
-  B as parseFromXml
+  isAnnotationStyle,
+  isAnnotationType,
+  parseAnnotation,
+  parseAnnotationList,
+  parseFromXml
 };
