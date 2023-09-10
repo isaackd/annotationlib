@@ -1,11 +1,11 @@
+import './index.css';
+
 import HighlightAnnotation from './annotations/highlight.js';
 import HighlightTextAnnotation from './annotations/highlightText.js';
 import { getFinalAnnotationColor, NoteAnnotation } from './annotations/note.js';
 import SpeechAnnotation from './annotations/speech.js';
 
 import type { Annotation } from "../parser";
-
-import "./index.css";
 
 interface PlayerOptions {
 	getVideoTime: () => number;
@@ -143,9 +143,6 @@ class AnnotationRenderer {
 				this.annotationsContainer.append(annotation.element);
 			}
 		}
-
-		console.log(this.annotations);
-
 	}
 	private createCloseElement(): SVGSVGElement {
 		const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");

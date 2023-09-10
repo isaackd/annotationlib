@@ -231,7 +231,7 @@ interface BackgroundShape {
  * @param base The `<annotation />` element
  * @returns
  */
-function getBackgroundShapeFromBase(base: Element): BackgroundShape {
+function getBackgroundShapeFromBase(base: Element): BackgroundShape | null {
 	const movingRegion = base.getElementsByTagName("movingRegion")[0];
 	if (!movingRegion) {
 		return null;
@@ -242,11 +242,23 @@ function getBackgroundShapeFromBase(base: Element): BackgroundShape {
 	const regions = movingRegion.getElementsByTagName(`${regionType}Region`);
 	const { timeStart, timeEnd } = extractRegionTime(regions);
 
+	const rect: Record<string, number> = {};
+
+	for (const attr of ["x", "y", "w", "h"]) {
+		const val = regions[0].getAttribute(attr);
+
+		if (!val) {
+			throw new Error(`Required attribute "${attr}" is null`);
+		}
+
+		rect[attr] = parseFloat(val);
+	}
+
 	const shape: BackgroundShape = {
-		x: parseFloat(regions[0].getAttribute("x")),
-		y: parseFloat(regions[0].getAttribute("y")),
-		width: parseFloat(regions[0].getAttribute("w")),
-		height: parseFloat(regions[0].getAttribute("h")),
+		x: rect.x,
+		y: rect.y,
+		width: rect.w,
+		height: rect.h,
 		timeStart,
 		timeEnd,
 	}
@@ -271,11 +283,16 @@ function getAttributesFromBase(base: Element): { id: string, type: AnnotationTyp
 	const type = base.getAttribute("type");
 	const style = base.getAttribute("style");
 
+	if (!id) {
+		throw new Error("Missing \"id\" attribute in base");
+	}
+
+	if (!type) {
+		throw new Error("Missing \"type\" attribute in base");
+	}
+
 	if (!isAnnotationType(type)) {
 		throw new Error("Invalid value in attribute element: type");
-	}
-	if (!isAnnotationStyle(style)) {
-		throw new Error("Invalid value in attribute element: style");
 	}
 
 	return { id, type, style };
