@@ -5,27 +5,27 @@ If you're instead looking to view YouTube annotations again,
 check out [AnnotationsRestored](https://github.com/isaackd/AnnotationsRestored) and https://invidio.us.***
 
 ## Usage
-Start by including `AnnotationRenderer.css` and `AnnotationRenderer.js`
+Import the renderer and/or the parser.
 
 ```html
-<link rel="stylesheet" type="text/css" href="AnnotationRenderer.css">
-<script type="text/javascript" src="AnnotationRenderer.js"></script>
+<script type="text/javascript" src="renderer.js"></script>
+<script type="text/javascript" src="parser.js"></script>
 ```
 
-If parsing annotation data, include `AnnotationParser.js` as well
-```html
-<script type="text/javascript" src="AnnotationParser.js"></script>
+or
+
+```js
+import { parseFromXml } from "parser.js";
+import { AnnotationRenderer } from "renderer.js";
 ```
 
-Finally, parse the XML and begin rendering annotations
+Then parse the XML and begin rendering annotations
 
 ```javascript
-const parser = new AnnotationParser();
-const annotationElements = parser.getAnnotationsFromXml(xmlData);
-const annotations = parser.parseYoutubeAnnotationList(annotationElements);
+const annotations = parseFromXml(xmlData);
 
 const videoContainer = document.getElementById("video-container");
-<!-- HTML5 video element -->
+// `video` is a <video> element
 const video = document.getElementById("video");
 const renderer = new AnnotationRenderer(annotations, videoContainer, {
     getVideoTime() {
@@ -64,5 +64,9 @@ window.addEventListener("__ar_annotation_click", e => {
 ```
 
 ## Building
-1. Run `npm install` to install the dev dependencies (Rollup, Uglify, CleanCSS)
-2. Make changes and run `npm run release`
+1. Run `npm install` to install the dev dependencies
+2. Make changes and run `npm run build`
+
+## Testing
+
+Vitest is used for testing. Run `vitest` in the root directory to run all tests.
