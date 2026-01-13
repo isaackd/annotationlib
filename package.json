@@ -1,5 +1,5 @@
 {
-	"name": "annotationlib",
+	"name": "@isaackd/annotationlib",
 	"version": "2.0.0",
 	"description": "YouTube annotation parser and renderer",
 	"keywords": [
