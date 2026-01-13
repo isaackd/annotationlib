@@ -1,40 +1,39 @@
 {
-    "name": "annotationlib",
-    "version": "2.0.0",
-    "description": "YouTube annotation parser and renderer",
-    "type": "module",
-
-    "types": "./dist/index.d.mts",
-    "files": ["dist"],
-
-    "exports": {
-        ".": {
-            "import": "./dist/index.mjs",
-            "types": "./dist/index.d.mts"
-        },
-        "./index.css": "./dist/index.css"
-    },
-
-    "scripts": {
-        "build": "tsdown && cp \"src/renderer/index.css\" dist",
-        "prepublishOnly": "npm run build"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/isaackd/annotationlib.git"
-    },
-    "keywords": [
-        "youtube",
-        "annotations"
-    ],
-    "author": "isaackd",
-    "license": "GPLv3",
-    "bugs": {
-        "url": "https://github.com/isaackd/annotationlib/issues"
-    },
-    "homepage": "https://github.com/isaackd/annotationlib#readme",
-    "devDependencies": {
-        "tsdown": "^0.18.4",
-        "typescript": "^5.9.3"
-    }
+	"name": "annotationlib",
+	"version": "2.0.0",
+	"description": "YouTube annotation parser and renderer",
+	"keywords": [
+		"annotations",
+		"youtube"
+	],
+	"homepage": "https://github.com/isaackd/annotationlib#readme",
+	"bugs": {
+		"url": "https://github.com/isaackd/annotationlib/issues"
+	},
+	"license": "MIT",
+	"author": "isaackd",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/isaackd/annotationlib.git"
+	},
+	"files": [
+		"dist"
+	],
+	"type": "module",
+	"types": "./dist/index.d.mts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.mts",
+			"import": "./dist/index.mjs"
+		},
+		"./index.css": "./dist/index.css"
+	},
+	"scripts": {
+		"build": "tsdown && cp \"src/renderer/index.css\" dist",
+		"prepublishOnly": "npm run build"
+	},
+	"devDependencies": {
+		"tsdown": "^0.18.4",
+		"typescript": "^5.9.3"
+	}
 }
