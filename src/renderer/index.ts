@@ -5,7 +5,7 @@ import HighlightTextAnnotation from './annotations/highlightText.js';
 import { getFinalAnnotationColor, NoteAnnotation } from './annotations/note.js';
 import SpeechAnnotation from './annotations/speech.js';
 
-import type { Annotation } from "../parser";
+import type { Annotation } from "../index.js";
 
 interface PlayerOptions {
 	getVideoTime: () => number;
@@ -390,6 +390,4 @@ class AnnotationRenderer {
 	}
 }
 
-export default AnnotationRenderer;
-
-window.AnnotationRenderer = AnnotationRenderer;
+export { AnnotationRenderer };

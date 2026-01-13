@@ -14,7 +14,7 @@ class HighlightAnnotation extends NoteAnnotation {
 
 	setupHoverAppearance() {
 		const { backgroundOpacity, backgroundColor } = this.data.appearance;
-		const actionType = this.data.action.type;
+		const actionType = this.data?.action?.type;
 
 		this.element.addEventListener("mouseenter", () => {
 			this.closeElement.currentAnnotation = this;

@@ -111,7 +111,7 @@ class NoteAnnotation {
 				}
 			}, 100);
 		});
-		if (this.data.action.type === "url") {
+		if (this.data?.action?.type === "url") {
 			this.element.style.cursor = "pointer";
 		}
 	}

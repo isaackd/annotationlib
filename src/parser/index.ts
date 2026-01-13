@@ -16,7 +16,11 @@ interface AnnotationAppearance {
 	textSize?: number;
 }
 
-type AnnotationAction = AnnotationActionLink | AnnotationActionTimestamp;
+type AnnotationAction =
+	| AnnotationActionLink
+	| AnnotationActionRedirect
+	| AnnotationActionTimestamp
+	| AnnotationActionShowAnnotation;
 
 interface AnnotationActionLink {
 	type: "url";
@@ -25,7 +29,19 @@ interface AnnotationActionLink {
 	url: string;
 
 	/** Unsure what this attribute does */
-	target: string;
+	target?: string;
+}
+
+interface AnnotationActionRedirect {
+	type: "redirect";
+
+	/** The href value this annotation links to.
+	 *
+	 * Here is an example value:
+	 * /redirect?event=infocard&amp;q=http%3A%2F%2Fwww.example.org&amp;redir_token=xxx
+	 *
+	 */
+	value: string;
 }
 
 interface AnnotationActionTimestamp {
@@ -37,11 +53,51 @@ interface AnnotationActionTimestamp {
 	seconds: number;
 }
 
-const AnnotationTypesArr = ["text",  "highlight",  "pause",  "branding"] as const;
-const AnnotationStylesArr = ["popup", "speech", "highlightText", "anchored", "branding", "label", "title"] as const;
+interface AnnotationActionShowAnnotation {
+	type: "showAnnotation";
 
-export type AnnotationType = typeof AnnotationTypesArr[number];
-export type AnnotationStyle = typeof AnnotationStylesArr[number];
+	/**
+	 * The id of the annotation to show
+	 */
+	annotationId: string;
+	/**
+	 * Not sure what this is yet
+	 */
+	duration: number;
+	trigger: string;
+}
+
+const AnnotationTypesArr = [
+	"text",
+	"highlight",
+	"pause",
+	"branding",
+	"card",
+	"drawer",
+	"promotion",
+
+	/** This has only been found in 1 annotation file (UElT_dT9YFY.xml). I'm not sure what it was for.
+	 * Possibly for annotations only visible on the timeline?
+	 */
+	"timeline",
+
+	/** This has only been found in 1 annotation file (UElT_dT9YFY.xml). I'm not sure what it was for.
+	 * Possibly for annotations only visible on the timeline?
+	 */
+	"marker",
+] as const;
+const AnnotationStylesArr = [
+	"popup",
+	"speech",
+	"highlightText",
+	"anchored",
+	"branding",
+	"label",
+	"title",
+] as const;
+
+export type AnnotationType = (typeof AnnotationTypesArr)[number];
+export type AnnotationStyle = (typeof AnnotationStylesArr)[number];
 
 export function isAnnotationType(value: string): value is AnnotationType {
 	return AnnotationTypesArr.includes(value as AnnotationType);
@@ -80,7 +136,7 @@ export interface Annotation {
 	/**
 	 * The height of the annotation in percent of video height (0 to 100)
 	 */
-	height: number
+	height: number;
 
 	/**
 	 * What time the annotation will appear in seconds.
@@ -136,13 +192,27 @@ function xmlToDom(xml: string): Document {
 
 export function parseFromXml(xml: string): Annotation[] {
 	const dom = xmlToDom(xml);
-	const annotations = dom.getElementsByTagName("annotation");
+	let annotations = Array.from(dom.getElementsByTagName("annotation"));
+
+	annotations = annotations.filter((anno) => {
+		// Remove annotations that are inside of other annotations, usually used for showAnnotation action
+		// We process them later
+		const parentTag = anno.parentElement?.tagName;
+		if (parentTag !== "annotations") {
+			if (parentTag !== "action") {
+				throw new Error("Unknown annotation location");
+			}
+
+			return false;
+		}
+
+		return true;
+	});
 
 	return parseAnnotationList(annotations);
 }
 
-
-export function parseAnnotationList(annotationElements: HTMLCollectionOf<Element>): Annotation[] {
+export function parseAnnotationList(annotationElements: Element[]): Annotation[] {
 	const annotations = [];
 	for (const el of annotationElements) {
 		const parsedAnnotation = parseAnnotation(el);
@@ -156,7 +226,7 @@ export function parseAnnotationList(annotationElements: HTMLCollectionOf<Element
 export function parseAnnotation(annotationElement: Element): Annotation | null {
 	const base = annotationElement;
 	const attributes = getAttributesFromBase(base);
-	if (!attributes.type || attributes.type === "pause") {
+	if (!attributes.type || ["pause", "timeline", "marker"].includes(attributes.type)) {
 		return null;
 	}
 
@@ -187,7 +257,7 @@ export function parseAnnotation(annotationElement: Element): Annotation | null {
 		height: backgroundShape.height,
 
 		timeStart,
-		timeEnd
+		timeEnd,
 	};
 
 	if (attributes.style) {
@@ -261,7 +331,7 @@ function getBackgroundShapeFromBase(base: Element): BackgroundShape | null {
 		height: rect.h,
 		timeStart,
 		timeEnd,
-	}
+	};
 
 	const sx = regions[0].getAttribute("sx");
 	const sy = regions[0].getAttribute("sy");
@@ -278,21 +348,25 @@ function getBackgroundShapeFromBase(base: Element): BackgroundShape | null {
  * @param base The `<annotation />` element
  * @returns
  */
-function getAttributesFromBase(base: Element): { id: string, type: AnnotationType, style: AnnotationStyle } {
+function getAttributesFromBase(base: Element): {
+	id: string;
+	type: AnnotationType;
+	style: AnnotationStyle;
+} {
 	const id = base.getAttribute("id");
 	const type = base.getAttribute("type");
 	const style = base.getAttribute("style");
 
 	if (!id) {
-		throw new Error("Missing \"id\" attribute in base");
+		throw new Error('Missing "id" attribute in base');
 	}
 
 	if (!type) {
-		throw new Error("Missing \"type\" attribute in base");
+		throw new Error('Missing "type" attribute in base');
 	}
 
 	if (!isAnnotationType(type)) {
-		throw new Error("Invalid value in attribute element: type");
+		throw new Error(`Invalid value in attribute element: type = ${type}`);
 	}
 
 	return { id, type, style };
@@ -308,8 +382,7 @@ function getTextFromBase(base: Element): string | null {
 	const textElement = base.getElementsByTagName("TEXT")[0];
 	if (textElement) {
 		return textElement.textContent;
-	}
-	else {
+	} else {
 		return null;
 	}
 }
@@ -327,33 +400,56 @@ function getActionFromBase(base: Element): AnnotationAction | void {
 	}
 
 	const urlElement = actionElement.getElementsByTagName("url")[0];
-	if (!urlElement) {
+	const annotationRefElement = actionElement.getElementsByTagName("annotation")[0];
+	if (!urlElement && !annotationRefElement) {
 		return null;
 	}
 
-	const actionUrlTarget = urlElement.getAttribute("target");
-	const href = urlElement.getAttribute("value");
+	if (annotationRefElement) {
+		const id = annotationRefElement.getAttribute("id");
+		const trigger = actionElement.getAttribute("trigger");
+		const duration = annotationRefElement.getAttribute("duration");
 
-	const url = new URL(href);
-	const srcVid = url.searchParams.get("src_vid");
-	const toVid = url.searchParams.get("v");
+		return {
+			type: "showAnnotation",
+			annotationId: id,
+			trigger,
+			duration: timeStringToSeconds(duration),
+		};
+	}
 
-	return linkOrTimestamp(url, srcVid, toVid, actionUrlTarget);
+	const actionUrlTarget = urlElement.getAttribute("target") || undefined;
+	let href = urlElement.getAttribute("value");
+
+	if (!href) {
+		return { type: "url", url: "", target: actionUrlTarget };
+	}
+
+	return linkOrTimestamp(href, actionUrlTarget);
 }
 
-function linkOrTimestamp(url: URL, srcVid: string, toVid: string, actionUrlTarget: string): AnnotationAction {
-	if (srcVid && toVid && srcVid === toVid) {
-		let seconds = 0;
-		const hash = url.hash;
-		if (hash && hash.startsWith("#t=")) {
-			const timeString = url.hash.split("#t=")[1];
-			seconds = timeStringToSeconds(timeString);
+function linkOrTimestamp(href: string, actionUrlTarget?: string): AnnotationAction {
+	if (href.startsWith("/redirect")) {
+		return { type: "redirect", value: href };
+	}
+
+	if (href.includes("src_vid=") && href.includes("v=")) {
+		const url = new URL(href);
+		const srcVid = url.searchParams.get("src_vid");
+		const toVid = url.searchParams.get("v");
+
+		if (srcVid === toVid) {
+			let seconds = 0;
+			const hash = url.hash;
+			if (hash && hash.startsWith("#t=")) {
+				const timeString = url.hash.split("#t=")[1];
+				seconds = timeStringToSeconds(timeString);
+			}
+			return { type: "time", seconds };
 		}
-		return { type: "time", seconds };
 	}
-	else {
-		return { type: "url", url: url.href, target: actionUrlTarget};
-	}
+
+	return { type: "url", url: href, target: actionUrlTarget };
 }
 
 /**
@@ -389,7 +485,10 @@ function getAppearanceFromBase(base: Element): AnnotationAppearance {
  * @param regions The region elements of the annotation
  * @returns The start and end time of the annotation
  */
-function extractRegionTime(regions: HTMLCollectionOf<Element>): { timeStart: number, timeEnd: number } {
+function extractRegionTime(regions: HTMLCollectionOf<Element>): {
+	timeStart: number;
+	timeEnd: number;
+} {
 	const timeStartAttr = regions[0].getAttribute("t");
 	const timeStart = hmsToSeconds(timeStartAttr);
 
